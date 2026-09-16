@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .font-display {
+    font-family: 'Cinzel', serif;
+  }
+  .font-sans {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0b0b0d;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d4af37;
+}

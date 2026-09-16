@@ -1,0 +1,15 @@
+export { Header } from './Header';
+export { Hero } from './Hero';
+export { AboutSection } from './AboutSection';
+export { FounderSection } from './FounderSection';
+export { TeamAndStatsSection } from './TeamAndStatsSection';
+export { ServicesSection } from './ServicesSection';
+export { FeaturedProductsSection } from './FeaturedProductsSection';
+export { SocialProofSection } from './SocialProofSection';
+export { PositioningSection } from './PositioningSection';
+export { LocationAndHoursSection } from './LocationAndHoursSection';
+export { BookingSection } from './BookingSection';
+export { ContactSection } from './ContactSection';
+export { Footer } from './Footer';
+export { FloatingWhatsApp } from './FloatingWhatsApp';
+export { ProductCard } from './ProductCard';

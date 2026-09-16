@@ -1,0 +1,6 @@
+{
+  "name": "Studio Black7",
+  "description": "Studio Black7 — Barbearia premium na Zona Norte de São Paulo. Cortes, barba, pigmentação, penteados, química e coloração. Agende seu horário.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
