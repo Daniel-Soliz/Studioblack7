@@ -1,5 +1,6 @@
 export { AdminLoginPage } from './AdminLoginPage';
 export { AdminDashboardPage } from './AdminDashboardPage';
+export { AdminAccessPage } from './AdminAccessPage';
 export { AdminProductsPage } from './AdminProductsPage';
 export { AdminProductFormPage } from './AdminProductFormPage';
 export { AdminInventoryPage } from './AdminInventoryPage';
