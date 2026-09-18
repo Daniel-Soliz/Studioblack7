@@ -501,10 +501,10 @@ export const CheckoutPage: React.FC = () => {
 
               <div className="p-4 rounded-xl bg-black/60 border border-amber-400/30 space-y-2">
                 <p className="text-sm font-bold text-amber-400">
-                  Pagamento online será configurado posteriormente.
+                  Pix via Mercado Pago
                 </p>
                 <p className="text-xs text-zinc-300 leading-relaxed">
-                  Para sua total segurança, dados sensíveis de cartão não são coletados pelo site. Ao confirmar, seu pedido será salvo diretamente e você poderá efetuar o pagamento via Pix ou presencialmente na retirada no Studio Black7.
+                  O pagamento da loja é processado por Pix pelo Mercado Pago. O valor é validado no servidor antes da cobrança e o site exibe QR Code, Pix Copia e Cola e a opção de abrir o pagamento no celular.
                 </p>
               </div>
             </div>
@@ -571,7 +571,7 @@ export const CheckoutPage: React.FC = () => {
                 className="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-zinc-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-amber-500/20 hover:brightness-105 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  <span>Registrando Pedido...</span>
+                  <span>Gerando Pix...</span>
                 ) : (
                   <>
                     <span>Gerar Pix e Finalizar Pedido</span>
