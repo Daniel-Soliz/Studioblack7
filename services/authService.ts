@@ -1,100 +1,64 @@
 import { UserSession } from '../types';
-import { StorageService } from './storageService';
+import { AdminSecurityService } from './adminSecurityService';
 
-const AUTH_STORAGE_KEY = 'sb7_admin_session_v1';
-const SESSION_DURATION_MS = 8 * 60 * 60 * 1000; // 8 hours
-
-// Default administrative access configuration
-// Allowed default administrative logins
-const ALLOWED_ADMIN_IDENTIFIERS = [
-  'admin@studioblack7.com.br',
-  'rayblack7@gmail.com',
-  'admin',
-  'rayblack7'
-];
-
-// SHA-256 cryptographic digest of the secure administrative initial key
-// Plain-text is never stored in the codebase
-const DEFAULT_PASSWORD_HASH = '067462d6fd87e8dcb22d7130736e6b2036021692166785531d2ca1f486aed709';
-
-export async function hashPassword(message: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
+const AUTH_STORAGE_KEY = 'sb7_admin_session_v2';
 
 export class AuthService {
-  /**
-   * Validates admin credentials securely and issues a signed session token.
-   */
-  static async login(email: string, pass: string): Promise<{ success: boolean; message: string; session?: UserSession }> {
+  static async login(
+    email: string,
+    pass: string
+  ): Promise<{ success: boolean; message: string; session?: UserSession }> {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPass = pass.trim();
 
     if (!cleanEmail || !cleanPass) {
-      return { success: false, message: 'Por favor, preencha o e-mail/usuário e a senha.' };
-    }
-
-    const settings = StorageService.getSettings();
-    const expectedHash = settings.adminPasswordHash || DEFAULT_PASSWORD_HASH;
-    const configuredAdminEmail = settings.adminEmail ? settings.adminEmail.trim().toLowerCase() : null;
-
-    const hashedInput = await hashPassword(cleanPass);
-    
-    // Check identifier (either default list, configured email, or generic admin user)
-    const validIdentifier = 
-      ALLOWED_ADMIN_IDENTIFIERS.includes(cleanEmail) ||
-      (configuredAdminEmail && cleanEmail === configuredAdminEmail) ||
-      cleanEmail.includes('admin') ||
-      cleanEmail.includes('black7');
-
-    const validPassword = hashedInput === expectedHash;
-
-    if (!validIdentifier || !validPassword) {
-      return { 
-        success: false, 
-        message: 'Credenciais inválidas. Verifique seu e-mail ou usuário administrativo e senha.' 
+      return {
+        success: false,
+        message: 'Por favor, preencha o e-mail/usuário e a senha.',
       };
     }
 
-    // Generate tamper-resistant session token
-    const randomBytes = Array.from(crypto.getRandomValues(new Uint8Array(24)))
-      .map(b => b.toString(16).padStart(2, '0')).join('');
-    const token = `sb7_sess_${Date.now()}_${randomBytes}`;
-    const expiresAt = Date.now() + SESSION_DURATION_MS;
-
-    const session: UserSession = {
-      id: 'admin-rayblack7',
-      name: 'Ray Silva (Ray Black7)',
-      email: cleanEmail,
-      role: 'admin',
-      token,
-      expiresAt
-    };
-
     try {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
-      StorageService.logActivity('Login Administrativo', `Usuário ${cleanEmail} iniciou sessão com sucesso.`);
-    } catch (e) {
-      console.error('Falha ao gravar sessão de autenticação:', e);
-    }
+      const result = await AdminSecurityService.login(cleanEmail, cleanPass);
 
-    return { success: true, message: 'Autenticado com sucesso.', session };
+      if (!result.success || !result.session) {
+        return {
+          success: false,
+          message: result.message || 'Credenciais inválidas.',
+        };
+      }
+
+      const session = result.session as UserSession;
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+
+      // Remove a sessão antiga, que era validada somente no navegador.
+      localStorage.removeItem('sb7_admin_session_v1');
+
+      return {
+        success: true,
+        message: result.message || 'Autenticado com sucesso.',
+        session,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível validar o acesso administrativo.',
+      };
+    }
   }
 
-  /**
-   * Retrieves current active session or null if expired or missing.
-   */
   static getSession(): UserSession | null {
     try {
       const raw = localStorage.getItem(AUTH_STORAGE_KEY);
       if (!raw) return null;
+
       const session = JSON.parse(raw) as UserSession;
 
-      // Check session expiration
-      if (!session.expiresAt || Date.now() > session.expiresAt) {
-        this.logout();
+      if (!session.expiresAt || Date.now() > session.expiresAt || !session.token) {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
         return null;
       }
 
@@ -104,21 +68,75 @@ export class AuthService {
     }
   }
 
-  /**
-   * Verifies if user has valid admin session
-   */
+  static async verifySession(): Promise<UserSession | null> {
+    const session = this.getSession();
+    if (!session) return null;
+
+    try {
+      const result = await AdminSecurityService.verify(session.token);
+      if (!result.success) {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        return null;
+      }
+      return session;
+    } catch {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      return null;
+    }
+  }
+
   static isAuthenticated(): boolean {
     return this.getSession() !== null;
   }
 
-  /**
-   * Terminates active administrative session
-   */
+  static async changePassword(
+    currentPassword: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> {
+    const session = this.getSession();
+
+    if (!session) {
+      return {
+        success: false,
+        message: 'Sua sessão expirou. Entre novamente para alterar a senha.',
+      };
+    }
+
+    try {
+      return await AdminSecurityService.changePassword(
+        session.token,
+        currentPassword,
+        newPassword
+      );
+    } catch (error) {
+      return {
+        success: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível atualizar a senha administrativa.',
+      };
+    }
+  }
+
   static logout(): void {
+    const session = this.getSession();
+
+    if (session?.token) {
+      void AdminSecurityService.log(
+        session.token,
+        'logout',
+        window.location.pathname
+      ).catch(() => {
+        // O encerramento local da sessão não deve depender do registro remoto.
+      });
+    }
+
     try {
       localStorage.removeItem(AUTH_STORAGE_KEY);
-    } catch (e) {
-      console.error('Erro ao encerrar sessão:', e);
+      localStorage.removeItem('sb7_admin_session_v1');
+    } catch (error) {
+      console.error('Erro ao encerrar sessão:', error);
     }
   }
 }
