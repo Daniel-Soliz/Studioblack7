@@ -3,6 +3,13 @@ import { MessageCircle, Scissors, Sparkles } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { createWhatsAppBookingUrl } from '../data/barbershop';
 
+const realWorkImages = [
+  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-1.webp`, alt: 'Corte masculino com acabamento e degradê - Studio Black7' },
+  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-2.webp`, alt: 'Acabamento frontal e penteado masculino - Studio Black7' },
+  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-3.webp`, alt: 'Penteado masculino visto de cima - Studio Black7' },
+  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-4.webp`, alt: 'Resultado final de corte masculino - Studio Black7' }
+];
+
 export const ServicesSection: React.FC = () => {
   const { services } = useStore();
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
@@ -119,6 +126,41 @@ export const ServicesSection: React.FC = () => {
           ))}
         </div>
 
+        <div className="mt-16">
+          <div className="text-center mb-6">
+            <span className="text-[11px] uppercase tracking-[0.24em] text-amber-400 font-extrabold">
+              Trabalhos realizados
+            </span>
+            <h3 className="font-['Cinzel'] text-2xl sm:text-3xl font-black text-white mt-2">
+              Resultados Studio Black7
+            </h3>
+            <p className="text-sm text-zinc-400 mt-2">
+              Alguns resultados reais dos nossos cortes e acabamentos.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {realWorkImages.map((image, index) => (
+              <div
+                key={image.src}
+                className="group relative aspect-[4/5] overflow-hidden rounded-2xl bg-zinc-900 border border-zinc-800 shadow-lg"
+              >
+                <img
+                  src={image.src}
+                  alt={image.alt}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  loading="lazy"
+                />
+                <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/25 to-transparent">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-white/90">
+                    Trabalho #{index + 1}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="mt-14 text-center">
           <a
             href={createWhatsAppBookingUrl()}
@@ -131,7 +173,6 @@ export const ServicesSection: React.FC = () => {
           </a>
         </div>
       </div>
-
     </section>
   );
 };
