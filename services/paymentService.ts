@@ -13,6 +13,14 @@ export interface PixPaymentResult {
   externalReference: string;
 }
 
+export interface PixPaymentStatusResult {
+  ok: boolean;
+  orderId: string;
+  status: string;
+  statusDetail: string;
+  paid: boolean;
+}
+
 async function requestPix(payload: unknown): Promise<PixPaymentResult> {
   const response = await fetch(PAYMENT_ENDPOINT, {
     method: 'POST',
@@ -46,5 +54,24 @@ export class PaymentService {
       payer: { name: input.customerName, email: input.customerEmail },
       items: input.items
     });
+  }
+
+  static async checkStorePayment(orderId: string): Promise<PixPaymentStatusResult> {
+    const response = await fetch(PAYMENT_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'check_status',
+        kind: 'store',
+        orderId
+      })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data?.ok) {
+      throw new Error(data?.error || 'Não foi possível confirmar o pagamento agora.');
+    }
+
+    return data as PixPaymentStatusResult;
   }
 }
