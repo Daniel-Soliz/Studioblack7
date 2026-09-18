@@ -18,6 +18,7 @@ import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useStore } from '../../context/StoreContext';
 import { GalleryItem } from '../../types';
 import { getAssetUrl } from '../../utils';
+import { CloudStoreService } from '../../services/cloudStoreService';
 
 export const AdminGalleryPage: React.FC = () => {
   const { gallery, saveGallery } = useStore();
@@ -62,47 +63,21 @@ export const AdminGalleryPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  // Helper to read and compress local file to optimized WebP / JPEG
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Upload the original file to Supabase Storage instead of storing Base64 in the browser.
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsCompressing(true);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1200;
-        const MAX_HEIGHT = 1200;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          setPhotoImageUrl(compressedDataUrl);
-        }
-        setIsCompressing(false);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    try {
+      const url = await CloudStoreService.uploadImageFromFile(file, 'gallery');
+      setPhotoImageUrl(url);
+    } catch (error) {
+      console.error(error);
+      alert('Não foi possível enviar a foto para o armazenamento. Tente novamente.');
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
   const handleSavePhoto = (e: React.FormEvent) => {
