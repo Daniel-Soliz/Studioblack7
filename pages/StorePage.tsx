@@ -294,9 +294,10 @@ export const StorePage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => {
-              const isOutOfStock = product.stock <= 0 || product.status === 'out_of_stock';
+              const isCatalogOnly = product.price <= 0;
+              const isOutOfStock = !isCatalogOnly && ((product.stock ?? 0) <= 0 || product.status === 'out_of_stock');
               const price = product.salePrice ?? product.price;
-              const hasPromo = product.salePrice && product.salePrice < product.price;
+              const hasPromo = !isCatalogOnly && product.salePrice && product.salePrice < product.price;
 
               return (
                 <div
@@ -365,13 +366,21 @@ export const StorePage: React.FC = () => {
                     {/* Pricing and Actions */}
                     <div className="pt-3 border-t border-zinc-800/80 space-y-3">
                       <div className="flex items-baseline gap-2">
-                        <span className="font-mono font-black text-xl text-white">
-                          R$ {price.toFixed(2).replace('.', ',')}
-                        </span>
-                        {hasPromo && (
-                          <span className="font-mono text-xs text-zinc-500 line-through">
-                            R$ {product.price.toFixed(2).replace('.', ',')}
+                        {isCatalogOnly ? (
+                          <span className="font-black text-base text-amber-400">
+                            Consulte o preço
                           </span>
+                        ) : (
+                          <>
+                            <span className="font-mono font-black text-xl text-white">
+                              R$ {price.toFixed(2).replace('.', ',')}
+                            </span>
+                            {hasPromo && (
+                              <span className="font-mono text-xs text-zinc-500 line-through">
+                                R$ {product.price.toFixed(2).replace('.', ',')}
+                              </span>
+                            )}
+                          </>
                         )}
                       </div>
 
@@ -389,19 +398,29 @@ export const StorePage: React.FC = () => {
                           Ver Detalhes
                         </Link>
 
-                        <button
-                          type="button"
-                          onClick={() => handleAddToCart(product)}
-                          disabled={isOutOfStock}
-                          className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                            isOutOfStock
-                              ? 'bg-zinc-800/50 text-zinc-500 cursor-not-allowed border border-zinc-800'
-                              : 'bg-gradient-to-r from-amber-500 to-amber-400 hover:brightness-105 text-zinc-950 font-black shadow-md shadow-amber-500/15'
-                          }`}
-                        >
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                          <span>{isOutOfStock ? 'Esgotado' : 'Adicionar'}</span>
-                        </button>
+                        {isCatalogOnly ? (
+                          <Link
+                            to={`/produto/${product.id}`}
+                            className="py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:brightness-105 text-zinc-950 shadow-md shadow-amber-500/15"
+                          >
+                            <ShoppingBag className="w-3.5 h-3.5" />
+                            <span>Consultar</span>
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleAddToCart(product)}
+                            disabled={isOutOfStock}
+                            className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                              isOutOfStock
+                                ? 'bg-zinc-800/50 text-zinc-500 cursor-not-allowed border border-zinc-800'
+                                : 'bg-gradient-to-r from-amber-500 to-amber-400 hover:brightness-105 text-zinc-950 font-black shadow-md shadow-amber-500/15'
+                            }`}
+                          >
+                            <ShoppingBag className="w-3.5 h-3.5" />
+                            <span>{isOutOfStock ? 'Esgotado' : 'Adicionar'}</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
