@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Scissors,
@@ -22,6 +22,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { getAssetUrl } from '../../utils';
+import { AdminSecurityService } from '../../services/adminSecurityService';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -29,11 +30,12 @@ interface AdminLayoutProps {
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
-  const { session, logout } = useAuth();
+  const { session, isLoading, logout } = useAuth();
   const { products, orders, settings } = useStore();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const lastLoggedPath = useRef<string>('');
 
   const pendingOrdersCount = orders.filter(o => o.status === 'pending').length;
   const lowStockCount = products.filter(p => (p.stock ?? 0) <= (settings.lowStockThreshold || 3)).length;
@@ -50,13 +52,40 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
     { label: 'Horários', path: '/admin/horarios', icon: Clock },
     { label: 'Pedidos', path: '/admin/pedidos', icon: ShoppingCart, badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined, badgeColor: 'bg-red-500' },
     { label: 'Estoque', path: '/admin/estoque', icon: Boxes, badge: lowStockCount > 0 ? lowStockCount : undefined, badgeColor: 'bg-amber-500' },
+    { label: 'Acessos', path: '/admin/acessos', icon: ShieldCheck },
     { label: 'Configurações', path: '/admin/configuracoes', icon: Settings },
   ];
+
+  useEffect(() => {
+    if (!session?.token || !location.pathname.startsWith('/admin/')) return;
+    if (lastLoggedPath.current === location.pathname) return;
+
+    lastLoggedPath.current = location.pathname;
+    void AdminSecurityService.log(
+      session.token,
+      'admin_page_view',
+      location.pathname
+    ).catch(() => {
+      // O painel continua funcional mesmo se o registro de auditoria falhar.
+    });
+  }, [location.pathname, session?.token]);
 
   const handleLogout = () => {
     logout();
     navigate('/admin/login');
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#09090d] text-zinc-400 flex items-center justify-center text-sm">
+        Validando sessão administrativa...
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
+  }
 
   return (
     <div className="min-h-screen bg-[#09090d] text-zinc-100 flex flex-col md:flex-row">
