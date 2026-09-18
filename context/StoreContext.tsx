@@ -79,7 +79,30 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       })
       .catch((error) => console.warn('Sincronização com a nuvem indisponível:', error));
 
-    return () => { active = false; };
+    const syncCloud = () => {
+      CloudStoreService.loadAll()
+        .then((cloud) => {
+          if (!active) return;
+          if (cloud.products) setProducts(cloud.products as Product[]);
+          if (cloud.categories) setCategories(cloud.categories as ProductCategoryItem[]);
+          if (cloud.services) setServices(cloud.services as ServiceItem[]);
+          if (cloud.gallery) setGallery(cloud.gallery as GalleryItem[]);
+          if (cloud.content) setContent({ ...StorageService.getContent(), ...(cloud.content as SiteContent) });
+          if (cloud.settings) setSettings({ ...StorageService.getSettings(), ...(cloud.settings as SiteSettings) });
+          if (cloud.orders) setOrders(cloud.orders as Order[]);
+          if (cloud.activities) setActivities(cloud.activities as ActivityLog[]);
+        })
+        .catch((error) => console.warn('Sincronização com a nuvem indisponível:', error));
+    };
+
+    const interval = window.setInterval(syncCloud, 10000);
+    window.addEventListener('focus', syncCloud);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener('focus', syncCloud);
+    };
   }, [refreshData]);
 
   const saveProduct = (product: Product) => {
