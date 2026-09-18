@@ -17,10 +17,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Check initial active session
-    const current = AuthService.getSession();
-    setSession(current);
-    setIsLoading(false);
+    let active = true;
+
+    const restoreSession = async () => {
+      const verified = await AuthService.verifySession();
+
+      if (!active) return;
+      setSession(verified);
+      setIsLoading(false);
+    };
+
+    void restoreSession();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const login = async (email: string, pass: string) => {
