@@ -18,17 +18,16 @@ import { Product } from '../types';
 import { Header, Footer, FloatingWhatsApp } from '../components';
 
 export const StorePage: React.FC = () => {
-  const { products, categories, content } = useStore();
+  const { products, content } = useStore();
   const { addToCart } = useCart();
   const [searchParams, setSearchParams] = useSearchParams();
-  const categoryParam = searchParams.get('categoria') || 'Todas';
+  const categoryParam = searchParams.get('categoria') || 'Todos';
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam);
   const [priceRange, setPriceRange] = useState<'all' | 'under50' | '50to100' | 'above100'>('all');
   const [availabilityOnly, setAvailabilityOnly] = useState<boolean>(false);
   const [filterFeatured, setFilterFeatured] = useState<boolean>(false);
-  const [filterPromo, setFilterPromo] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<'recent' | 'priceAsc' | 'priceDesc' | 'bestsellers' | 'featured'>('featured');
   const [feedback, setFeedback] = useState<{ [id: string]: string }>({});
 
@@ -42,11 +41,10 @@ export const StorePage: React.FC = () => {
 
   const isFiltered = Boolean(
     searchTerm.trim() || 
-    selectedCategory !== 'Todas' || 
+    selectedCategory !== 'Todos' || 
     priceRange !== 'all' || 
     availabilityOnly || 
     filterFeatured || 
-    filterPromo || 
     sortBy !== 'featured'
   );
 
@@ -64,8 +62,10 @@ export const StorePage: React.FC = () => {
         if (!matchesName && !matchesCat && !matchesSku) return false;
       }
 
-      // Category filter
-      if (selectedCategory !== 'Todas' && p.category !== selectedCategory) {
+      // Main store navigation: Todos, Cabelo, Barba, Facial, Kits e Promoções
+      if (selectedCategory === 'Promoções') {
+        if (!p.salePrice || p.salePrice >= p.price) return false;
+      } else if (selectedCategory !== 'Todos' && p.category !== selectedCategory) {
         return false;
       }
 
@@ -82,9 +82,6 @@ export const StorePage: React.FC = () => {
 
       // Featured
       if (filterFeatured && !p.featured) return false;
-
-      // Promo
-      if (filterPromo && (!p.salePrice || p.salePrice >= p.price)) return false;
 
       return true;
     }).sort((a, b) => {
@@ -109,7 +106,7 @@ export const StorePage: React.FC = () => {
       // 'recent'
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [products, searchTerm, selectedCategory, priceRange, availabilityOnly, filterFeatured, filterPromo, sortBy]);
+  }, [products, searchTerm, selectedCategory, priceRange, availabilityOnly, filterFeatured, sortBy]);
 
   const handleAddToCart = (product: Product) => {
     const res = addToCart(product, 1);
@@ -214,30 +211,21 @@ export const StorePage: React.FC = () => {
           <div className="pt-3 border-t border-zinc-800/80 flex flex-wrap items-center justify-between gap-4">
             {/* Category Chips */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar w-full lg:w-auto">
-              <button
-                type="button"
-                onClick={() => setSelectedCategory('Todas')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer ${
-                  selectedCategory === 'Todas'
-                    ? 'bg-amber-400 text-zinc-950 font-black'
-                    : 'bg-zinc-800/80 text-zinc-300 hover:text-white hover:bg-zinc-750 border border-zinc-700'
-                }`}
-              >
-                Todas
-              </button>
-
-              {categories.filter(c => c.status === 'active').map(cat => (
+              {['Todos', 'Cabelo', 'Barba', 'Facial', 'Kits', 'Promoções'].map((category) => (
                 <button
-                  key={cat.id}
+                  key={category}
                   type="button"
-                  onClick={() => setSelectedCategory(cat.name)}
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    setSearchParams(category === 'Todos' ? {} : { categoria: category });
+                  }}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer ${
-                    selectedCategory === cat.name
+                    selectedCategory === category
                       ? 'bg-amber-400 text-zinc-950 font-black'
                       : 'bg-zinc-800/80 text-zinc-300 hover:text-white hover:bg-zinc-750 border border-zinc-700'
                   }`}
                 >
-                  {cat.name}
+                  {category}
                 </button>
               ))}
             </div>
@@ -254,18 +242,6 @@ export const StorePage: React.FC = () => {
                 }`}
               >
                 ✓ Em Estoque
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFilterPromo(!filterPromo)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                  filterPromo
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
-                    : 'bg-zinc-800/50 text-zinc-400 border-zinc-800 hover:text-zinc-200'
-                }`}
-              >
-                % Promoções
               </button>
 
               <button
@@ -288,15 +264,14 @@ export const StorePage: React.FC = () => {
           <span>
             Exibindo <strong className="text-amber-400">{filteredProducts.length}</strong> produtos
           </span>
-          {(searchTerm || selectedCategory !== 'Todas' || availabilityOnly || filterFeatured || filterPromo) && (
+          {(searchTerm || selectedCategory !== 'Todos' || availabilityOnly || filterFeatured) && (
             <button
               type="button"
               onClick={() => {
                 setSearchTerm('');
-                setSelectedCategory('Todas');
+                setSelectedCategory('Todos');
                 setAvailabilityOnly(false);
                 setFilterFeatured(false);
-                setFilterPromo(false);
                 setPriceRange('all');
               }}
               className="text-amber-400 hover:underline font-semibold"
