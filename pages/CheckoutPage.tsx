@@ -43,6 +43,8 @@ export const CheckoutPage: React.FC = () => {
   const [complement, setComplement] = useState('');
   const [neighborhood, setNeighborhood] = useState('');
   const [notes, setNotes] = useState('');
+  const [isLookingUpCep, setIsLookingUpCep] = useState(false);
+  const [cepMessage, setCepMessage] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -52,6 +54,47 @@ export const CheckoutPage: React.FC = () => {
     navigate('/carrinho');
     return null;
   }
+
+  const handleCepChange = async (rawValue: string) => {
+    const digits = rawValue.replace(/\D/g, '').slice(0, 8);
+    const formatted = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+    setPostalCode(formatted);
+    setCepMessage('');
+
+    if (digits.length !== 8) {
+      setAddress('');
+      setNeighborhood('');
+      return;
+    }
+
+    setIsLookingUpCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      if (!response.ok) throw new Error('Falha ao consultar CEP.');
+
+      const data = await response.json();
+      if (data?.erro) {
+        setAddress('');
+        setNeighborhood('');
+        setCepMessage('CEP não encontrado. Confira os números e tente novamente.');
+        return;
+      }
+
+      setAddress(data.logradouro || '');
+      setNeighborhood(data.bairro || '');
+      setCity(data.localidade || 'São Paulo');
+      setState(data.uf || 'SP');
+      setComplement(data.complemento || '');
+      setCepMessage(data.logradouro
+        ? `${data.logradouro}${data.bairro ? ` · ${data.bairro}` : ''} · ${data.localidade || ''}/${data.uf || ''}`
+        : `${data.localidade || ''}/${data.uf || ''}`
+      );
+    } catch {
+      setCepMessage('Não foi possível consultar o CEP agora. Tente novamente.');
+    } finally {
+      setIsLookingUpCep(false);
+    }
+  };
 
   const handleFinishOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -346,66 +389,43 @@ export const CheckoutPage: React.FC = () => {
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      maxLength={9}
                       value={postalCode}
-                      onChange={(e) => setPostalCode(e.target.value)}
+                      onChange={(e) => void handleCepChange(e.target.value)}
                       placeholder="00000-000"
                       className="w-full px-4 py-3 rounded-xl bg-black/60 border border-zinc-750 focus:border-amber-400 focus:outline-none text-sm text-white"
                     />
+                    <p className="text-[11px] text-zinc-500 mt-1">
+                      {isLookingUpCep ? 'Buscando endereço...' : 'Digite o CEP e o endereço será preenchido automaticamente.'}
+                    </p>
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-zinc-300 uppercase mb-1">
-                      Rua / Logradouro
-                    </label>
-                    <input
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Ex: Tv. União ou Av. Principal"
-                      className="w-full px-4 py-3 rounded-xl bg-black/60 border border-zinc-750 focus:border-amber-400 focus:outline-none text-sm text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
                     <label className="block text-xs font-bold text-zinc-300 uppercase mb-1">
                       Número
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
+                      autoComplete="address-line2"
                       value={number}
                       onChange={(e) => setNumber(e.target.value)}
                       placeholder="Ex: 4"
                       className="w-full px-4 py-3 rounded-xl bg-black/60 border border-zinc-750 focus:border-amber-400 focus:outline-none text-sm text-white"
                     />
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-300 uppercase mb-1">
-                      Bairro
-                    </label>
-                    <input
-                      type="text"
-                      value={neighborhood}
-                      onChange={(e) => setNeighborhood(e.target.value)}
-                      placeholder="Jardim Paulistano"
-                      className="w-full px-4 py-3 rounded-xl bg-black/60 border border-zinc-750 focus:border-amber-400 focus:outline-none text-sm text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-300 uppercase mb-1">
-                      Cidade / UF
-                    </label>
-                    <input
-                      type="text"
-                      value={`${city} - ${state}`}
-                      readOnly
-                      className="w-full px-4 py-3 rounded-xl bg-black/30 border border-zinc-800 text-sm text-zinc-400 cursor-not-allowed"
-                    />
-                  </div>
                 </div>
+
+                {cepMessage && (
+                  <div className={`p-3 rounded-xl border text-xs ${address
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                    : 'bg-red-500/10 border-red-500/30 text-red-300'
+                  }`}>
+                    {cepMessage}
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-bold text-zinc-300 uppercase mb-1">
