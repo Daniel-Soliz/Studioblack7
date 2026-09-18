@@ -1,15 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   ShieldCheck, 
   ArrowLeft, 
   CheckCircle2, 
-  MessageCircle, 
-  ShoppingBag, 
-  AlertCircle, 
-  CreditCard,
-  Building2,
-  Clock,
+    CreditCard,
   ArrowRight,
   Copy,
   ExternalLink,
@@ -20,7 +15,24 @@ import { useStore } from '../context/StoreContext';
 import { PaymentService, PixPaymentResult } from '../services/paymentService';
 import { WHATSAPP_RAW } from '../data/barbershop';
 import { Order } from '../types';
-import { Header, Footer, FloatingWhatsApp } from '../components';
+import { Header, Footer } from '../components';
+
+const buildPaidWhatsAppUrl = (order: Order) => {
+  const itemsSummary = order.items
+    .map(i => `• ${i.quantity}x ${i.name} (R$ ${(i.totalPrice ?? 0).toFixed(2).replace('.', ',')})`)
+    .join('\n');
+
+  const message = `*PAGAMENTO CONFIRMADO - STUDIO BLACK7*\n` +
+    `*Pedido:* #${order.orderNumber}\n` +
+    `*Cliente:* ${order.customer.name}\n` +
+    `*Telefone:* ${order.customer.phone}\n` +
+    `*Entrega:* ${order.shippingMethod}\n\n` +
+    `*Itens:*\n${itemsSummary}\n\n` +
+    `*Total pago:* R$ ${order.total.toFixed(2).replace('.', ',')}\n\n` +
+    `_Pagamento confirmado pelo Mercado Pago._`;
+
+  return `https://wa.me/${WHATSAPP_RAW}?text=${encodeURIComponent(message)}`;
+};
 
 export const CheckoutPage: React.FC = () => {
   const { 
@@ -31,7 +43,7 @@ export const CheckoutPage: React.FC = () => {
     total, 
     clearCart 
   } = useCart();
-  const { createOrder } = useStore();
+  const { createOrder, updateOrderStatus } = useStore();
   const navigate = useNavigate();
 
   // Customer Form State
@@ -54,6 +66,56 @@ export const CheckoutPage: React.FC = () => {
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [pixPayment, setPixPayment] = useState<PixPaymentResult | null>(null);
   const [pixCopied, setPixCopied] = useState(false);
+  const [paymentStatusMessage, setPaymentStatusMessage] = useState('Aguardando pagamento...');
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+
+  useEffect(() => {
+    if (!completedOrder || !pixPayment?.orderId || paymentConfirmed) return;
+
+    let active = true;
+    let checking = false;
+
+    const verifyPayment = async () => {
+      if (checking || !active) return;
+      checking = true;
+
+      try {
+        const result = await PaymentService.checkStorePayment(pixPayment.orderId);
+        if (!active) return;
+
+        if (result.paid) {
+          setPaymentConfirmed(true);
+          setPaymentStatusMessage('Pagamento confirmado. Abrindo WhatsApp...');
+          updateOrderStatus(completedOrder.id, 'confirmed', 'paid');
+
+          window.setTimeout(() => {
+            window.location.assign(buildPaidWhatsAppUrl(completedOrder));
+          }, 900);
+          return;
+        }
+
+        setPaymentStatusMessage('Aguardando confirmação do pagamento...');
+      } catch {
+        if (active) setPaymentStatusMessage('Pagamento ainda não confirmado. Vamos verificar novamente.');
+      } finally {
+        checking = false;
+      }
+    };
+
+    void verifyPayment();
+    const interval = window.setInterval(() => void verifyPayment(), 4000);
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void verifyPayment();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [completedOrder, pixPayment?.orderId, paymentConfirmed, updateOrderStatus]);
 
   if (cart.length === 0 && !completedOrder) {
     navigate('/carrinho');
@@ -184,23 +246,6 @@ export const CheckoutPage: React.FC = () => {
 
   // If order is completed, show the Confirmation Screen
   if (completedOrder) {
-    const itemsSummary = completedOrder.items
-      .map(i => `• ${i.quantity}x ${i.name} (R$ ${i.totalPrice.toFixed(2).replace('.', ',')})`)
-      .join('\n');
-
-    const whatsappOrderMessage = `*NOVO PEDIDO NO SITE - STUDIO BLACK7*\n` +
-      `*Número:* #${completedOrder.orderNumber}\n` +
-      `*Cliente:* ${completedOrder.customer.name}\n` +
-      `*Telefone:* ${completedOrder.customer.phone}\n` +
-      `*Entrega:* ${completedOrder.shippingMethod}\n\n` +
-      `*Itens do Pedido:*\n${itemsSummary}\n\n` +
-      `*Subtotal:* R$ ${completedOrder.subtotal.toFixed(2).replace('.', ',')}\n` +
-      `*Frete:* R$ ${completedOrder.shipping.toFixed(2).replace('.', ',')}\n` +
-      `*Total Geral:* R$ ${completedOrder.total.toFixed(2).replace('.', ',')}\n\n` +
-      `_Aguardando instruções para conclusão e retirada/entrega._`;
-
-    const whatsappUrl = `https://wa.me/${WHATSAPP_RAW}?text=${encodeURIComponent(whatsappOrderMessage)}`;
-
     return (
       <div className="pt-32 pb-24 min-h-screen bg-[#08080a] px-4">
         <div className="max-w-2xl mx-auto p-6 sm:p-10 rounded-3xl bg-zinc-900 border border-amber-400/40 space-y-8 shadow-2xl">
@@ -257,6 +302,8 @@ export const CheckoutPage: React.FC = () => {
               {pixPayment.ticketUrl && (
                 <a
                   href={pixPayment.ticketUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-full py-3.5 rounded-xl bg-amber-400 text-zinc-950 font-black text-sm flex items-center justify-center gap-2"
                 >
                   <ExternalLink className="w-4 h-4" />
@@ -264,8 +311,15 @@ export const CheckoutPage: React.FC = () => {
                 </a>
               )}
 
+              <div className={`p-3 rounded-xl border text-xs font-bold ${
+                paymentConfirmed
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                  : 'bg-amber-400/10 border-amber-400/30 text-amber-300'
+              }`}>
+                {paymentStatusMessage}
+              </div>
               <p className="text-[11px] text-zinc-500">
-                A cobrança está em ambiente de teste até a ativação comercial para produção.
+                O WhatsApp só será aberto depois que o Mercado Pago confirmar o pagamento.
               </p>
             </div>
           )}
@@ -297,23 +351,23 @@ export const CheckoutPage: React.FC = () => {
             </div>
           </div>
 
-          {/* WhatsApp Confirmation CTA */}
           <div className="space-y-3">
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-green-500 text-zinc-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-emerald-500/20 hover:brightness-105 transition-all flex items-center justify-center gap-2"
-            >
-              <MessageCircle className="w-5 h-5 fill-zinc-950" />
-              <span>Enviar Resumo do Pedido no WhatsApp (+55 11 98726-7087)</span>
-            </a>
+            <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 text-center">
+              <p className="text-sm font-bold text-white">
+                {paymentConfirmed ? 'Pagamento confirmado.' : 'Finalize o Pix para concluir o pedido.'}
+              </p>
+              <p className="text-xs text-zinc-400 mt-1">
+                {paymentConfirmed
+                  ? 'Você será direcionado automaticamente para o WhatsApp.'
+                  : 'Sem confirmação do Mercado Pago, nenhum acesso ao WhatsApp é liberado nesta etapa.'}
+              </p>
+            </div>
 
             <Link
               to="/loja"
               className="w-full py-3.5 px-6 rounded-xl bg-zinc-800 hover:bg-zinc-750 text-zinc-200 text-xs font-bold uppercase tracking-wider text-center block transition-colors"
             >
-              Continuar Navegando na Loja
+              Voltar à Loja
             </Link>
           </div>
 
@@ -595,8 +649,7 @@ export const CheckoutPage: React.FC = () => {
       {/* Footer */}
       <Footer />
 
-      {/* Floating WhatsApp CTA */}
-      <FloatingWhatsApp />
+      {/* WhatsApp intentionally hidden during checkout until payment confirmation */}
     </div>
   );
 };
