@@ -78,7 +78,7 @@ export class CloudStoreService {
 
   static async uploadImage(file: Blob, originalName = 'image.jpg', folder = 'site'): Promise<string> {
     const extension = (() => {
-      const match = originalName.toLowerCase().match(/\\.([a-z0-9]+)$/);
+      const match = originalName.toLowerCase().match(/\.([a-z0-9]+)$/);
       return match?.[1] || 'jpg';
     })();
 
