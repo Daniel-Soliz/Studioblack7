@@ -48,7 +48,7 @@ export const PixServiceModal: React.FC<PixServiceModalProps> = ({ service, onClo
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-lg rounded-3xl bg-zinc-950 border border-amber-400/30 shadow-2xl overflow-hidden">
+      <div className="w-full max-w-lg max-h-[92svh] rounded-3xl bg-zinc-950 border border-amber-400/30 shadow-2xl overflow-y-auto">
         <div className="p-5 border-b border-zinc-800 flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-widest text-amber-400 font-bold">Pagamento do serviço</p>
@@ -119,9 +119,9 @@ export const PixServiceModal: React.FC<PixServiceModalProps> = ({ service, onClo
             )}
 
             {pix.ticketUrl && (
-              <a href={pix.ticketUrl} target="_blank" rel="noopener noreferrer" className="w-full py-3 rounded-xl border border-amber-400/30 text-amber-300 font-bold text-sm flex items-center justify-center gap-2">
+              <a href={pix.ticketUrl} className="w-full py-3.5 rounded-xl bg-amber-400 text-zinc-950 font-black text-sm flex items-center justify-center gap-2">
                 <ExternalLink className="w-4 h-4" />
-                Abrir instruções do Mercado Pago
+                Abrir pagamento Pix no celular
               </a>
             )}
 
