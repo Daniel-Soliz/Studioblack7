@@ -182,7 +182,7 @@ export const AdminDashboardPage: React.FC = () => {
                 <span className="font-mono text-3xl font-black text-white">{services.length}</span>
                 <span className="text-xs text-amber-400 font-semibold">{activeServicesCount} ativos</span>
               </div>
-              <p className="text-[11px] text-zinc-500">Cortes, barbas, pigmentação e químicas</p>
+              <p className="text-[11px] text-zinc-500">Cortes, barbas, coloração e químicas</p>
             </div>
 
             {/* 2. Quantidade de Produtos */}
