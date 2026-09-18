@@ -13,6 +13,7 @@ import {
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useStore } from '../../context/StoreContext';
 import { getAssetUrl } from '../../utils';
+import { CloudStoreService } from '../../services/cloudStoreService';
 
 export const AdminSiteImagesPage: React.FC = () => {
   const { settings, saveSettings, content, saveContent } = useStore();
@@ -42,43 +43,17 @@ export const AdminSiteImagesPage: React.FC = () => {
 
   const [compressingKey, setCompressingKey] = useState<string | null>(null);
 
-  const compressAndSet = (file: File, callback: (dataUrl: string) => void, key: string) => {
+  const uploadAndSet = async (file: File, callback: (url: string) => void, key: string) => {
     setCompressingKey(key);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1200;
-        const MAX_HEIGHT = 1200;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.88);
-          callback(compressed);
-        }
-        setCompressingKey(null);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    try {
+      const url = await CloudStoreService.uploadImageFromFile(file, 'site');
+      callback(url);
+    } catch (error) {
+      console.error(error);
+      alert('Não foi possível enviar a imagem para o armazenamento. Tente novamente.');
+    } finally {
+      setCompressingKey(null);
+    }
   };
 
   const handleSaveAll = (e: React.FormEvent) => {
@@ -192,7 +167,7 @@ export const AdminSiteImagesPage: React.FC = () => {
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) compressAndSet(file, setHeroImage, 'hero');
+                        if (file) uploadAndSet(file, setHeroImage, 'hero');
                       }}
                       className="hidden"
                     />
@@ -266,7 +241,7 @@ export const AdminSiteImagesPage: React.FC = () => {
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) compressAndSet(file, setFounderImage, 'founder');
+                        if (file) uploadAndSet(file, setFounderImage, 'founder');
                       }}
                       className="hidden"
                     />
@@ -321,7 +296,7 @@ export const AdminSiteImagesPage: React.FC = () => {
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) compressAndSet(file, setLogoImage, 'logo');
+                        if (file) uploadAndSet(file, setLogoImage, 'logo');
                       }}
                       className="hidden"
                     />
@@ -366,7 +341,7 @@ export const AdminSiteImagesPage: React.FC = () => {
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) compressAndSet(file, setFaviconImage, 'fav');
+                        if (file) uploadAndSet(file, setFaviconImage, 'fav');
                       }}
                       className="hidden"
                     />
