@@ -16,7 +16,8 @@ import {
   Boxes,
   ShoppingCart,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  ShieldCheck
 } from 'lucide-react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useStore } from '../../context/StoreContext';
@@ -115,6 +116,15 @@ export const AdminDashboardPage: React.FC = () => {
       color: 'from-zinc-800/60 to-zinc-900/60',
       borderColor: 'border-zinc-700',
       badge: 'Seg–Sáb'
+    },
+    {
+      title: 'Acessos do Administrador',
+      description: 'Veja logins, tentativas recusadas, IP e dispositivo',
+      path: '/admin/acessos',
+      icon: ShieldCheck,
+      color: 'from-emerald-500/10 to-zinc-900/60',
+      borderColor: 'border-emerald-500/20',
+      badge: 'Segurança'
     },
     {
       title: 'Configurações do Sistema',
