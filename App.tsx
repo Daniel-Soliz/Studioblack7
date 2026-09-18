@@ -19,6 +19,7 @@ import {
 import {
   AdminLoginPage,
   AdminDashboardPage,
+  AdminAccessPage,
   AdminProductsPage,
   AdminProductFormPage,
   AdminInventoryPage,
@@ -71,6 +72,7 @@ export default function App() {
               <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+              <Route path="/admin/acessos" element={<AdminAccessPage />} />
               <Route path="/admin/servicos" element={<AdminServicesPage />} />
               <Route path="/admin/produtos" element={<AdminProductsPage />} />
               <Route path="/admin/produtos/novo" element={<AdminProductFormPage />} />
