@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
-import { CreditCard, MessageCircle, Scissors, Sparkles } from 'lucide-react';
+import { MessageCircle, Scissors, Sparkles } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { createWhatsAppBookingUrl } from '../data/barbershop';
-import { PixServiceModal } from './PixServiceModal';
-import { ServiceItem } from '../types';
 
 export const ServicesSection: React.FC = () => {
   const { services } = useStore();
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
-  const [paymentService, setPaymentService] = useState<ServiceItem | null>(null);
 
   const categories = ['Todos', 'Cortes', 'Barba', 'Penteado / Acabamento', 'Química / Alisamento', 'Coloração'];
 
@@ -106,27 +103,16 @@ export const ServicesSection: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentService(service)}
-                      className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider transition-all hover:brightness-105"
-                      title={`Pagar ${service.name} com Pix`}
-                    >
-                      <CreditCard className="w-3.5 h-3.5" />
-                      <span>Pix</span>
-                    </button>
-                    <a
-                      href={createWhatsAppBookingUrl(service.name)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-zinc-800 group-hover:bg-zinc-700 text-zinc-200 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-sm"
-                      title={`Agendar ${service.name} no WhatsApp`}
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      <span>Agendar</span>
-                    </a>
-                  </div>
+                  <a
+                    href={createWhatsAppBookingUrl(service.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-800 group-hover:bg-amber-400 text-zinc-200 group-hover:text-zinc-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-sm"
+                    title={`Agendar ${service.name} no WhatsApp`}
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>Agendar</span>
+                  </a>
                 </div>
               </div>
             </div>
@@ -146,9 +132,6 @@ export const ServicesSection: React.FC = () => {
         </div>
       </div>
 
-      {paymentService && (
-        <PixServiceModal service={paymentService} onClose={() => setPaymentService(null)} />
-      )}
     </section>
   );
 };
