@@ -24,8 +24,7 @@ export const AdminServicesPage: React.FC = () => {
   const categories = [
     'Cortes',
     'Barba',
-    'Pigmentação Capilar',
-    'Penteado / Acabamento',
+      'Penteado / Acabamento',
     'Química / Alisamento',
     'Coloração'
   ];
