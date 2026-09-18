@@ -7,7 +7,7 @@ export const ServicesSection: React.FC = () => {
   const { services } = useStore();
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
 
-  const categories = ['Todos', 'Cortes', 'Barba', 'Penteado / Acabamento', 'Química / Alisamento', 'Coloração'];
+  const categories = ['Todos', 'Cortes', 'Barba', 'Pigmentação Capilar', 'Penteado / Acabamento', 'Química / Alisamento', 'Coloração'];
 
   const activeServices = services.filter(s => s.status !== 'inactive');
   const filteredServices = selectedCategory === 'Todos'
@@ -17,8 +17,6 @@ export const ServicesSection: React.FC = () => {
   return (
     <section id="servicos" className="py-20 relative scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Section Header */}
         <div className="max-w-3xl mx-auto text-center space-y-3 mb-12">
           <span className="text-xs uppercase tracking-[0.25em] text-amber-400 font-bold">
             Tabela Oficial de Atendimentos
@@ -32,7 +30,6 @@ export const ServicesSection: React.FC = () => {
           <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mt-2" />
         </div>
 
-        {/* Category Filters */}
         <div className="flex items-center justify-start sm:justify-center gap-2 overflow-x-auto pb-4 mb-10 no-scrollbar">
           {categories.map((cat) => (
             <button
@@ -50,63 +47,78 @@ export const ServicesSection: React.FC = () => {
           ))}
         </div>
 
-        {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredServices.map((service) => (
             <div
               key={service.id}
-              className="relative p-6 rounded-2xl bg-zinc-900/60 border border-zinc-800/90 hover:border-amber-400/40 hover:bg-zinc-900/90 transition-all duration-300 flex flex-col justify-between group shadow-lg"
+              className="relative rounded-2xl bg-zinc-900/60 border border-zinc-800/90 hover:border-amber-400/40 hover:bg-zinc-900/90 transition-all duration-300 flex flex-col overflow-hidden group shadow-lg"
             >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] uppercase tracking-widest font-extrabold text-amber-400/90 bg-amber-400/10 px-2.5 py-1 rounded-md border border-amber-400/20">
-                    {service.category}
-                  </span>
-                  {service.popular && (
-                    <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-extrabold text-amber-300 bg-amber-400/20 px-2.5 py-0.5 rounded-full border border-amber-400/30">
-                      <Sparkles className="w-3 h-3" />
-                      <span>Mais Pedido</span>
+              {service.image && (
+                <div className="aspect-[16/10] overflow-hidden bg-black">
+                  <img
+                    src={service.image}
+                    alt={`Exemplo de ${service.name}`}
+                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+
+              <div className="p-6 flex flex-col justify-between flex-1">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] uppercase tracking-widest font-extrabold text-amber-400/90 bg-amber-400/10 px-2.5 py-1 rounded-md border border-amber-400/20">
+                      {service.category}
                     </span>
-                  )}
+                    {service.popular && (
+                      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-extrabold text-amber-300 bg-amber-400/20 px-2.5 py-0.5 rounded-full border border-amber-400/30">
+                        <Sparkles className="w-3 h-3" />
+                        <span>Mais Pedido</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="font-['Cinzel'] text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
+                      {service.name}
+                    </h3>
+                    {service.image && (
+                      <p className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">
+                        Imagem de referência do trabalho
+                      </p>
+                    )}
+                    {service.description && (
+                      <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
+                        {service.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                <div>
-                  <h3 className="font-['Cinzel'] text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
-                    {service.name}
-                  </h3>
-                  {service.description && (
-                    <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
-                      {service.description}
-                    </p>
-                  )}
-                </div>
-              </div>
+                <div className="pt-5 mt-4 border-t border-zinc-800/80 flex items-center justify-between gap-3">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Valor Oficial</span>
+                    <span className="font-mono font-black text-xl text-amber-400">
+                      {service.price}
+                    </span>
+                  </div>
 
-              {/* Price & Action Button */}
-              <div className="pt-5 mt-4 border-t border-zinc-800/80 flex items-center justify-between gap-3">
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Valor Oficial</span>
-                  <span className="font-mono font-black text-xl text-amber-400">
-                    {service.price}
-                  </span>
+                  <a
+                    href={createWhatsAppBookingUrl(service.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-800 group-hover:bg-amber-400 text-zinc-200 group-hover:text-zinc-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-sm"
+                    title={`Agendar ${service.name} no WhatsApp`}
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>Agendar</span>
+                  </a>
                 </div>
-
-                <a
-                  href={createWhatsAppBookingUrl(service.name)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-800 group-hover:bg-amber-400 text-zinc-200 group-hover:text-zinc-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-sm"
-                  title={`Agendar ${service.name} no WhatsApp`}
-                >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span>Agendar</span>
-                </a>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Bottom CTA */}
         <div className="mt-14 text-center">
           <a
             href={createWhatsAppBookingUrl()}
@@ -118,7 +130,6 @@ export const ServicesSection: React.FC = () => {
             <span>Consultar Horários e Agendar Serviço</span>
           </a>
         </div>
-
       </div>
     </section>
   );
