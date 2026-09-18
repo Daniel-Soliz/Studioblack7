@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, MapPin, Sparkles, Scissors, Clock } from 'lucide-react';
+import { ShoppingBag, MapPin, Scissors, Clock } from 'lucide-react';
 import { isCurrentlyOpen } from '../data/barbershop';
 import { useStore } from '../context/StoreContext';
 import { getAssetUrl } from '../utils';
@@ -127,12 +127,6 @@ export const Hero: React.FC = () => {
                   
                   {/* Subtle Gradient Overlays */}
                   <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-85" />
-
-                  {/* Badges on Hero Image */}
-                  <div className="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-black/75 backdrop-blur-md border border-amber-400/40 text-amber-300 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>#1 Pigmentação Capilar</span>
-                  </div>
 
                   {/* Bottom Image Caption */}
                   <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-zinc-900/90 backdrop-blur-md border border-zinc-800/80 text-left">
