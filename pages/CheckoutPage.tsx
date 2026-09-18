@@ -10,11 +10,14 @@ import {
   CreditCard,
   Building2,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Copy,
+  ExternalLink,
+  QrCode
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useStore } from '../context/StoreContext';
-import { PaymentService } from '../services/paymentService';
+import { PaymentService, PixPaymentResult } from '../services/paymentService';
 import { WHATSAPP_RAW } from '../data/barbershop';
 import { Order } from '../types';
 import { Header, Footer, FloatingWhatsApp } from '../components';
@@ -49,6 +52,8 @@ export const CheckoutPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
+  const [pixPayment, setPixPayment] = useState<PixPaymentResult | null>(null);
+  const [pixCopied, setPixCopied] = useState(false);
 
   if (cart.length === 0 && !completedOrder) {
     navigate('/carrinho');
@@ -116,15 +121,14 @@ export const CheckoutPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // 1. Process payment service contract check
-      const paymentResult = await PaymentService.processPayment({
-        orderId: 'pending',
-        total,
+      const checkoutReference = `sb7_checkout_${Date.now()}`;
+      const pix = await PaymentService.createStorePix({
+        orderId: checkoutReference,
         customerName: name,
-        customerEmail: email
+        customerEmail: email,
+        items: cart.map(i => ({ productId: i.product.id, quantity: i.quantity }))
       });
 
-      // 2. Register real order in Store / StorageService
       const newOrder = createOrder({
         customer: {
           name,
@@ -148,7 +152,7 @@ export const CheckoutPage: React.FC = () => {
           unitPrice: i.product.salePrice ?? i.product.price,
           price: i.product.salePrice ?? i.product.price,
           totalPrice: (i.product.salePrice ?? i.product.price) * i.quantity,
-          image: i.product.thumbnail || i.product.images[0] || '',
+          image: i.product.thumbnail || i.product.images?.[0] || '',
           sku: i.product.sku || ''
         })),
         subtotal,
@@ -157,17 +161,25 @@ export const CheckoutPage: React.FC = () => {
         total,
         status: 'pending',
         paymentStatus: 'pending',
-        paymentMethod: 'Configurado Posteriormente',
-        notes
+        paymentMethod: 'Pix Mercado Pago',
+        notes: [notes, `Mercado Pago Order: ${pix.orderId}`, `Payment: ${pix.paymentId}`].filter(Boolean).join(' | ')
       });
 
+      setPixPayment(pix);
       setCompletedOrder(newOrder);
       clearCart();
     } catch (err: any) {
-      setErrorMessage(err.message || 'Erro ao registrar pedido. Tente novamente.');
+      setErrorMessage(err?.message || 'Erro ao gerar o Pix. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const copyPixCode = async () => {
+    if (!pixPayment?.qrCode) return;
+    await navigator.clipboard.writeText(pixPayment.qrCode);
+    setPixCopied(true);
+    window.setTimeout(() => setPixCopied(false), 1800);
   };
 
   // If order is completed, show the Confirmation Screen
@@ -208,17 +220,57 @@ export const CheckoutPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Payment Notice */}
-          <div className="p-4 rounded-xl bg-amber-400/10 border border-amber-400/30 text-xs text-amber-300 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <strong className="block font-bold">Aviso de Pagamento:</strong>
-              <p>Pagamento online será configurado posteriormente.</p>
-              <p className="text-zinc-400">
-                Você pode acertar o pagamento via Pix ou Cartão diretamente no WhatsApp da barbearia ou presencialmente no momento da retirada.
+          {/* Mercado Pago Pix */}
+          {pixPayment && (
+            <div className="p-5 rounded-2xl bg-black/60 border border-amber-400/30 space-y-4 text-center">
+              <div className="flex items-center justify-center gap-2 text-amber-400 font-black">
+                <QrCode className="w-5 h-5" />
+                <span>Pix Mercado Pago</span>
+              </div>
+              <p className="text-xs text-zinc-300">Escaneie o QR Code ou use o Pix Copia e Cola.</p>
+
+              {pixPayment.qrCodeBase64 && (
+                <div className="w-56 h-56 mx-auto p-3 rounded-2xl bg-white">
+                  <img
+                    src={`data:image/png;base64,${pixPayment.qrCodeBase64}`}
+                    alt="QR Code Pix"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
+
+              <div className="font-mono text-2xl font-black text-amber-400">
+                R$ {pixPayment.amount.toFixed(2).replace('.', ',')}
+              </div>
+
+              {pixPayment.qrCode && (
+                <button
+                  type="button"
+                  onClick={copyPixCode}
+                  className="w-full py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-sm flex items-center justify-center gap-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  {pixCopied ? 'Código copiado!' : 'Copiar Pix Copia e Cola'}
+                </button>
+              )}
+
+              {pixPayment.ticketUrl && (
+                <a
+                  href={pixPayment.ticketUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 rounded-xl border border-amber-400/30 text-amber-300 font-bold text-sm flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Abrir instruções do Mercado Pago
+                </a>
+              )}
+
+              <p className="text-[11px] text-zinc-500">
+                A cobrança está em ambiente de teste até a ativação comercial para produção.
               </p>
             </div>
-          </div>
+          )}
 
           {/* Order Details Card */}
           <div className="p-5 rounded-2xl bg-black/50 border border-zinc-800 space-y-4 text-xs">
@@ -524,7 +576,7 @@ export const CheckoutPage: React.FC = () => {
                   <span>Registrando Pedido...</span>
                 ) : (
                   <>
-                    <span>Confirmar e Finalizar Pedido</span>
+                    <span>Gerar Pix e Finalizar Pedido</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
