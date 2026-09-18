@@ -251,7 +251,6 @@ export const INITIAL_SERVICES: ServiceItem[] = [
   { id: 'corte', name: 'Corte', price: 'R$ 30,00', priceNumber: 30, category: 'Cortes', description: 'Corte personalizado com acabamento e alinhamento preciso.', popular: true, status: 'active', order: 1 },
   { id: 'corte-sobrancelha', name: 'Corte + Sobrancelha', price: 'R$ 35,00', priceNumber: 35, category: 'Cortes', description: 'Alinhamento completo do corte e desenho limpo das sobrancelhas.', status: 'active', order: 2 },
   { id: 'corte-penteado', name: 'Corte + Penteado', price: 'R$ 40,00', priceNumber: 40, category: 'Cortes', description: 'Corte completo com estilização profissional e fixação de bancada.', status: 'active', order: 3 },
-  { id: 'corte-pigmentacao', name: 'Corte + Pigmentação', price: 'R$ 45,00', priceNumber: 45, category: 'Cortes', description: 'Corte com a especialidade do Studio Black7: pigmentação de alta definição.', popular: true, status: 'active', order: 4 },
   { id: 'corte-relaxamento', name: 'Corte + Relaxamento', price: 'R$ 45,00', priceNumber: 45, category: 'Cortes', description: 'Controle de volume e textura capilar alinhado ao corte com acabamento.', status: 'active', order: 5 },
   { id: 'corte-barba', name: 'Corte + Barba', price: 'R$ 50,00', priceNumber: 50, category: 'Cortes', description: 'O combo clássico: corte de precisão e barba alinhada com toalha e navalha.', popular: true, status: 'active', order: 6 },
   { id: 'corte-barba-penteado', name: 'Corte + Barba + Penteado', price: 'R$ 60,00', priceNumber: 60, category: 'Cortes', description: 'Visual renovado dos fios à barba com finalização e penteado impecável.', status: 'active', order: 7 },
@@ -292,16 +291,6 @@ export const INITIAL_GALLERY: GalleryItem[] = [
     order: 2
   },
   {
-    id: 'gal-3',
-    title: 'Pigmentação capilar',
-    category: 'Pigmentação capilar',
-    image: '/images/Ray.png',
-    alt: 'Pigmentação capilar de alta definição com Ray Silva',
-    tag: 'Especialidade #1',
-    visible: true,
-    order: 3
-  },
-  {
     id: 'gal-4',
     title: 'Luzes masculinas',
     category: 'Luzes masculinas',
@@ -335,9 +324,9 @@ export const INITIAL_GALLERY: GalleryItem[] = [
 
 export const DEFAULT_HOME_SECTIONS: HomeSectionConfig[] = [
   { id: 'hero', name: 'Hero (Destaque Principal)', enabled: true, order: 1, description: 'Frase de impacto, foto de destaque e botões de ação' },
-  { id: 'services', name: 'Serviços & Tabela de Preços', enabled: true, order: 2, description: 'Catálogo de cortes, barba, pigmentação e tratamentos' },
+  { id: 'services', name: 'Serviços & Tabela de Preços', enabled: true, order: 2, description: 'Catálogo de cortes, barba, química, coloração e tratamentos' },
   { id: 'promotions', name: 'Promoções & Combos VIP', enabled: true, order: 3, description: 'Ofertas exclusivas com valores promocionais' },
-  { id: 'gallery', name: 'Galeria de Trabalhos', enabled: true, order: 4, description: 'Fotos reais de cortes, visagismo e pigmentações' },
+  { id: 'gallery', name: 'Galeria de Trabalhos', enabled: true, order: 4, description: 'Fotos reais de cortes, barbas, visagismo e coloração' },
   { id: 'booking', name: 'Agendamento Online', enabled: true, order: 5, description: 'Sistema interativo de escolha de serviço, data e profissional' },
   { id: 'testimonials', name: 'Depoimentos & Prova Social', enabled: true, order: 6, description: 'Avaliações de clientes do Studio Black7' },
   { id: 'store', name: 'Loja de Produtos Premium', enabled: true, order: 7, description: 'Pomadas, óleos e cosméticos masculinos' },
@@ -353,13 +342,13 @@ export const INITIAL_TEAM: TeamMember[] = [
     name: 'Ray Silva (Ray Black7)',
     role: 'Fundador & Master Barber',
     experience: '4 anos de profissão',
-    specialty: 'Pigmentação capilar de alta definição & Cortes Modernos',
+    specialty: 'Cortes modernos & Visagismo masculino',
     image: '/images/Ray.png',
-    description: 'Fundador do Studio Black7. Referência em pigmentação capilar na Zona Norte de São Paulo, visagismo masculino e cortes com acabamento cirúrgico.',
+    description: 'Fundador do Studio Black7. Profissional focado em visagismo masculino, cortes modernos e acabamento de alta precisão.',
     instagram: '@rayblakc7',
     whatsapp: '5511987267087',
     phone: '(11) 98726-7087',
-    services: ['Cortes', 'Barba', 'Pigmentação', 'Nevou', 'Penteados'],
+    services: ['Cortes', 'Barba', 'Nevou', 'Penteados'],
     active: true,
     order: 1
   },
@@ -394,19 +383,6 @@ export const INITIAL_PROMOTIONS: Promotion[] = [
     image: '/images/ray_barber_1789410748280.jpg',
     order: 1
   },
-  {
-    id: 'promo-2',
-    title: 'VIP Black7: Corte + Pigmentação Capilar',
-    description: 'A assinatura visual do Studio Black7. Corte moderno com técnica de pigmentação que valoriza o contorno.',
-    originalPrice: 120.00,
-    promoPrice: 99.00,
-    discountPercent: 17,
-    active: true,
-    badge: 'Especialidade Ray Black7',
-    category: 'Pigmentação',
-    image: '/images/Ray.png',
-    order: 2
-  }
 ];
 
 export const INITIAL_MENU: MenuItem[] = [
@@ -434,21 +410,6 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     notes: 'Degradê baixo na zero e sobrancelha',
     createdAt: new Date(Date.now() - 7200000).toISOString()
   },
-  {
-    id: 'app-2',
-    clientName: 'Matheus Ferreira',
-    clientPhone: '(11) 97555-8899',
-    serviceId: 'srv-pigmentacao',
-    serviceName: 'Pigmentação Capilar',
-    servicePrice: 'R$ 60,00',
-    professionalId: 'team-ray',
-    professionalName: 'Ray Silva (Ray Black7)',
-    date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-    time: '16:00',
-    status: 'pending',
-    notes: 'Primeira vez no Studio Black7',
-    createdAt: new Date().toISOString()
-  }
 ];
 
 export const INITIAL_CONTENT: SiteContent = {
@@ -464,8 +425,8 @@ export const INITIAL_CONTENT: SiteContent = {
   aboutText: 'O Studio Black7 nasceu da visão de Ray Black7 (Ray Silva), profissional apaixonado por transformação visual e autoestima. O espaço foi criado com o objetivo de oferecer mais do que um simples corte: uma experiência premium, baseada em técnica, cuidado, estilo e atendimento.',
   aboutQuote: 'Cada detalhe é pensado para que o cliente saia da cadeira não apenas com um novo visual, mas com mais confiança.',
   founderName: 'Ray Silva / Ray Black7',
-  founderBio: 'Profissional com 4 anos de profissão na estética masculina de alto padrão. Referência e especialista em pigmentação capilar na Zona Norte de São Paulo.',
-  founderSpecialty: 'Pigmentação capilar de alta definição',
+  founderBio: 'Profissional com 4 anos de profissão na estética masculina de alto padrão, com foco em cortes modernos, visagismo e acabamento de precisão.',
+  founderSpecialty: 'Cortes modernos e visagismo masculino',
   founderExperience: '4 anos de profissão',
   founderImageUrl: '/images/Ray.png',
   positioningQuote: 'Aqui não é só sobre cortar cabelo. É sobre entregar confiança, estilo e motivação para quem senta na cadeira.',
@@ -507,7 +468,7 @@ export const INITIAL_SETTINGS: SiteSettings = {
   heroImageUrl: '/images/ray_barber_1789410748280.jpg',
   founderImageUrl: '/images/Ray.png',
   metaTitle: 'Studio Black7 | Barbearia Premium na Zona Norte de São Paulo',
-  metaDescription: 'Studio Black7 — Barbearia premium na Zona Norte de São Paulo. Cortes, barba, pigmentação, penteados, química, coloração e produtos masculinos.',
+  metaDescription: 'Studio Black7 — Barbearia premium na Zona Norte de São Paulo. Cortes, barba, penteados, química, coloração e produtos masculinos.',
   lowStockThreshold: 5,
   adminPasswordHash: '067462d6fd87e8dcb22d7130736e6b2036021692166785531d2ca1f486aed709'
 };
