@@ -89,7 +89,7 @@ export const Hero: React.FC = () => {
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700 hover:border-amber-400/50 text-white hover:text-amber-300 font-bold text-xs uppercase tracking-widest transition-all duration-200 shadow-md"
               >
                 <ShoppingBag className="w-4 h-4 text-amber-400" />
-                <span>Linha de Produtos</span>
+                <span>Loja</span>
               </Link>
             </div>
 
