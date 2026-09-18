@@ -59,12 +59,13 @@ export const ProductDetailPage: React.FC = () => {
     );
   }
 
-  const isOutOfStock = product.stock <= 0 || product.status === 'out_of_stock';
+  const isCatalogOnly = product.price <= 0;
+  const isOutOfStock = !isCatalogOnly && ((product.stock ?? 0) <= 0 || product.status === 'out_of_stock');
   const effectivePrice = product.salePrice ?? product.price;
-  const hasPromo = product.salePrice && product.salePrice < product.price;
+  const hasPromo = !isCatalogOnly && product.salePrice && product.salePrice < product.price;
 
   const relatedProducts = products
-    .filter(p => p.category === product.category && p.id !== product.id && p.status === 'active' && p.stock > 0)
+    .filter(p => p.category === product.category && p.id !== product.id && p.status === 'active')
     .slice(0, 4);
 
   const handleAddToCart = () => {
@@ -202,23 +203,29 @@ export const ProductDetailPage: React.FC = () => {
             {/* Pricing Box */}
             <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex items-baseline justify-between">
               <div>
-                <span className="text-[11px] uppercase tracking-wider text-zinc-400 block font-semibold">Preço Oficial</span>
+                <span className="text-[11px] uppercase tracking-wider text-zinc-400 block font-semibold">Preço</span>
                 <div className="flex items-baseline gap-3">
-                  <span className="font-mono font-black text-3xl text-white">
-                    R$ {effectivePrice.toFixed(2).replace('.', ',')}
-                  </span>
-                  {hasPromo && (
-                    <span className="font-mono text-sm text-zinc-500 line-through">
-                      R$ {product.price.toFixed(2).replace('.', ',')}
-                    </span>
+                  {isCatalogOnly ? (
+                    <span className="font-black text-2xl text-amber-400">Sob consulta</span>
+                  ) : (
+                    <>
+                      <span className="font-mono font-black text-3xl text-white">
+                        R$ {effectivePrice.toFixed(2).replace('.', ',')}
+                      </span>
+                      {hasPromo && (
+                        <span className="font-mono text-sm text-zinc-500 line-through">
+                          R$ {product.price.toFixed(2).replace('.', ',')}
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
 
               <div className="text-right">
                 <span className="text-[11px] text-zinc-400 block">Disponibilidade</span>
-                <span className={`text-xs font-bold ${isOutOfStock ? 'text-red-400' : 'text-emerald-400'}`}>
-                  {isOutOfStock ? 'Esgotado' : `${product.stock} un. em estoque`}
+                <span className={`text-xs font-bold ${isCatalogOnly ? 'text-amber-400' : isOutOfStock ? 'text-red-400' : 'text-emerald-400'}`}>
+                  {isCatalogOnly ? 'Consulte disponibilidade' : isOutOfStock ? 'Esgotado' : `${product.stock} un. em estoque`}
                 </span>
               </div>
             </div>
@@ -230,7 +237,17 @@ export const ProductDetailPage: React.FC = () => {
 
             {/* Quantity Selector & Add to Cart */}
             <div className="space-y-3 pt-2">
-              {!isOutOfStock ? (
+              {isCatalogOnly ? (
+                <a
+                  href={productWhatsAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-zinc-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-amber-500/20 hover:brightness-105 transition-all flex items-center justify-center gap-2"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Consultar preço no WhatsApp</span>
+                </a>
+              ) : !isOutOfStock ? (
                 <div className="flex items-center gap-3">
                   <div className="flex items-center rounded-xl bg-zinc-900 border border-zinc-800 p-1">
                     <button
@@ -374,7 +391,7 @@ export const ProductDetailPage: React.FC = () => {
                     <span className="text-[10px] text-amber-400 uppercase font-semibold">{rel.category}</span>
                     <h3 className="text-sm font-bold text-white group-hover:text-amber-300 line-clamp-1">{rel.name}</h3>
                     <p className="font-mono font-black text-sm text-white mt-1">
-                      R$ {(rel.salePrice ?? rel.price).toFixed(2).replace('.', ',')}
+                      {rel.price <= 0 ? 'Preço sob consulta' : `R$ ${(rel.salePrice ?? rel.price).toFixed(2).replace('.', ',')}`}
                     </p>
                   </div>
                 </Link>
