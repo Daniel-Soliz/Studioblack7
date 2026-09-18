@@ -68,7 +68,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     CloudStoreService.loadAll()
       .then((cloud) => {
         if (!active) return;
-        if (cloud.products) setProducts(cloud.products as Product[]);
+        if (cloud.products) {
+          const cloudProducts = cloud.products as Product[];
+          StorageService.saveProducts(cloudProducts);
+          setProducts(cloudProducts);
+        }
         if (cloud.categories) setCategories(cloud.categories as ProductCategoryItem[]);
         if (cloud.services) setServices(cloud.services as ServiceItem[]);
         if (cloud.gallery) setGallery(cloud.gallery as GalleryItem[]);
@@ -83,7 +87,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       CloudStoreService.loadAll()
         .then((cloud) => {
           if (!active) return;
-          if (cloud.products) setProducts(cloud.products as Product[]);
+          if (cloud.products) {
+            const cloudProducts = cloud.products as Product[];
+            StorageService.saveProducts(cloudProducts);
+            setProducts(cloudProducts);
+          }
           if (cloud.categories) setCategories(cloud.categories as ProductCategoryItem[]);
           if (cloud.services) setServices(cloud.services as ServiceItem[]);
           if (cloud.gallery) setGallery(cloud.gallery as GalleryItem[]);
@@ -107,26 +115,56 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const saveProduct = (product: Product) => {
     const isNew = !products.some(p => p.id === product.id);
-    const res = StorageService.saveProduct(product);
+    const now = new Date().toISOString();
+    const normalized: Product = {
+      ...product,
+      id: product.id || `prod-${Date.now()}`,
+      slug: product.slug || product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+      createdAt: product.createdAt || now,
+      updatedAt: now
+    };
+
+    const current = [...products];
+    const existingIndex = current.findIndex(p => p.id === normalized.id);
+    const skuConflict = normalized.sku
+      ? current.find(p => p.sku?.trim().toLowerCase() === normalized.sku?.trim().toLowerCase() && p.id !== normalized.id)
+      : undefined;
+
+    if (skuConflict) {
+      return { success: false, message: `O SKU "${normalized.sku}" já está em uso pelo produto "${skuConflict.name}".` };
+    }
+
+    if (existingIndex >= 0) current[existingIndex] = normalized;
+    else current.unshift(normalized);
+
+    StorageService.saveProducts(current);
+    setProducts(current);
     StorageService.logActivity(
       isNew ? 'Produto Criado' : 'Produto Atualizado',
-      `Produto "${product.name}" salvo com sucesso.`
+      `Produto "${normalized.name}" salvo com sucesso.`
     );
-    void CloudStoreService.save('products', StorageService.getProducts()).catch((error) => console.error('Falha ao sincronizar produtos:', error));
-    refreshData();
-    return res;
+    void CloudStoreService.save('products', current).catch((error) => console.error('Falha ao sincronizar produtos:', error));
+
+    return {
+      success: true,
+      message: isNew ? 'Produto criado com sucesso.' : 'Produto atualizado com sucesso.',
+      product: normalized
+    };
   };
 
   const deleteProduct = (id: string) => {
     const prod = products.find(p => p.id === id);
-    const res = StorageService.deleteProduct(id);
+    const next = products.filter(p => p.id !== id);
+    if (next.length === products.length) return false;
+
+    StorageService.saveProducts(next);
+    setProducts(next);
     StorageService.logActivity(
       'Produto Excluído',
       `Produto "${prod?.name || id}" removido do catálogo.`
     );
-    void CloudStoreService.save('products', StorageService.getProducts()).catch((error) => console.error('Falha ao sincronizar produtos:', error));
-    refreshData();
-    return res;
+    void CloudStoreService.save('products', next).catch((error) => console.error('Falha ao sincronizar produtos:', error));
+    return true;
   };
 
   const saveCategories = (cats: ProductCategoryItem[]) => {
