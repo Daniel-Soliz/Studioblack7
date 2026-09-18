@@ -105,7 +105,7 @@ export const Hero: React.FC = () => {
               </div>
               <div className="space-y-0.5 border-l border-zinc-800 pl-3">
                 <p className="text-xs font-bold text-white uppercase tracking-wider">Precisão</p>
-                <p className="text-[11px] text-zinc-400">Degradê &amp; Pigmentação</p>
+                <p className="text-[11px] text-zinc-400">Degradê &amp; Acabamento</p>
               </div>
             </div>
           </div>
