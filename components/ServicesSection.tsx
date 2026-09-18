@@ -7,7 +7,7 @@ export const ServicesSection: React.FC = () => {
   const { services } = useStore();
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
 
-  const categories = ['Todos', 'Cortes', 'Barba', 'Pigmentação Capilar', 'Penteado / Acabamento', 'Química / Alisamento', 'Coloração'];
+  const categories = ['Todos', 'Cortes', 'Barba', 'Penteado / Acabamento', 'Química / Alisamento', 'Coloração'];
 
   const activeServices = services.filter(s => s.status !== 'inactive');
   const filteredServices = selectedCategory === 'Todos'
