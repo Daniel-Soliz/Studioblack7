@@ -26,7 +26,6 @@ import {
   AdminOrdersPage,
   AdminCategoriesPage,
   AdminServicesPage,
-  AdminGalleryPage,
   AdminSiteImagesPage,
   AdminContentPage,
   AdminContactPage,
@@ -58,7 +57,6 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/sobre" element={<AboutPage />} />
               <Route path="/servicos" element={<ServicesPage />} />
-              <Route path="/galeria" element={<Navigate to="/#servicos" replace />} />
               <Route path="/localizacao" element={<LocationPage />} />
               <Route path="/contato" element={<ContactPage />} />
 
@@ -77,7 +75,6 @@ export default function App() {
               <Route path="/admin/produtos" element={<AdminProductsPage />} />
               <Route path="/admin/produtos/novo" element={<AdminProductFormPage />} />
               <Route path="/admin/produtos/:id" element={<AdminProductFormPage />} />
-              <Route path="/admin/galeria" element={<AdminGalleryPage />} />
               <Route path="/admin/imagens" element={<AdminSiteImagesPage />} />
               <Route path="/admin/conteudo" element={<AdminContentPage />} />
               <Route path="/admin/contato" element={<AdminContactPage />} />
