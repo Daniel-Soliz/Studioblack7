@@ -6,7 +6,7 @@ export const AboutSection: React.FC = () => {
   const pillars = [
     {
       title: 'Técnica',
-      desc: 'Cortes milimetricamente desenhados e pigmentação de alta definição.',
+      desc: 'Cortes milimetricamente desenhados e acabamento de alta precisão.',
       icon: Award,
     },
     {
