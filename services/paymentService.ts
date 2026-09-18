@@ -47,17 +47,4 @@ export class PaymentService {
       items: input.items
     });
   }
-
-  static async createServicePix(input: {
-    serviceId: string;
-    customerName: string;
-    customerEmail: string;
-  }): Promise<PixPaymentResult> {
-    return requestPix({
-      action: 'create_pix',
-      kind: 'service',
-      payer: { name: input.customerName, email: input.customerEmail },
-      serviceId: input.serviceId
-    });
-  }
 }
