@@ -61,8 +61,14 @@ export const PixServiceModal: React.FC<PixServiceModalProps> = ({ service, onClo
 
         {!pix ? (
           <form onSubmit={generatePix} className="p-6 space-y-4">
+            <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 text-center">
+              <p className="text-[11px] uppercase tracking-widest text-zinc-400 font-bold">Valor do serviço</p>
+              <p className="mt-1 font-mono text-3xl font-black text-amber-400">
+                {service.promoPrice || service.price}
+              </p>
+            </div>
             <p className="text-sm text-zinc-300">
-              Gere o Pix para o valor cadastrado deste serviço. Depois do pagamento, combine o horário pelo WhatsApp.
+              Gere o Pix para este valor. Depois do pagamento, combine o horário pelo WhatsApp.
             </p>
             <input
               value={name}
@@ -83,7 +89,7 @@ export const PixServiceModal: React.FC<PixServiceModalProps> = ({ service, onClo
               className="w-full py-3.5 rounded-xl bg-amber-400 text-zinc-950 font-black uppercase text-sm flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />}
-              {loading ? 'Gerando Pix...' : 'Gerar Pix'}
+              {loading ? 'Gerando Pix...' : `Gerar Pix · ${service.promoPrice || service.price}`}
             </button>
           </form>
         ) : (
