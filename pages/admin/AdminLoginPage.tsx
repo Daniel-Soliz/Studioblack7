@@ -69,16 +69,16 @@ export const AdminLoginPage: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-zinc-300 uppercase mb-1.5">
-                E-mail do Administrador
+                E-mail ou usuário do Administrador
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@black7.com"
+                  placeholder="E-mail ou usuário administrativo"
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/60 border border-zinc-750 focus:border-amber-400 focus:outline-none text-sm text-white placeholder-zinc-500"
                 />
               </div>
@@ -124,7 +124,7 @@ export const AdminLoginPage: React.FC = () => {
         {/* Security Footer Notice */}
         <div className="mt-6 text-center text-[11px] text-zinc-500 flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-          <span>Autenticação criptográfica de alta segurança</span>
+          <span>Credenciais validadas pelo serviço de segurança do administrador</span>
         </div>
       </div>
     </div>
