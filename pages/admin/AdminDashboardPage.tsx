@@ -26,15 +26,15 @@ export const AdminDashboardPage: React.FC = () => {
   const { 
     services, 
     products, 
-    gallery, 
     activities, 
     orders, 
     settings 
   } = useStore();
 
-  // Quantidade de fotos total (fotos de galeria + fotos de produtos cadastradas + fotos institucionais)
+  // Quantidade de fotos dos serviços e produtos cadastrados
+  const servicePhotosCount = services.filter(s => Boolean(s.image)).length;
   const productPhotosCount = products.reduce((acc, p) => acc + (p.images?.length || (p.image ? 1 : 0)), 0);
-  const totalPhotosCount = gallery.length + productPhotosCount;
+  const totalPhotosCount = servicePhotosCount + productPhotosCount;
 
   // Últimas alterações
   const recentActivities = activities.slice(0, 7);
@@ -47,7 +47,7 @@ export const AdminDashboardPage: React.FC = () => {
   const shortcuts = [
     {
       title: 'Tabela de Serviços',
-      description: 'Alterar nomes, preços, categorias e status',
+      description: 'Alterar nomes, preços, categorias, status e fotos dos trabalhos',
       path: '/admin/servicos',
       icon: Scissors,
       color: 'from-amber-500/20 to-amber-500/5',
@@ -62,15 +62,6 @@ export const AdminDashboardPage: React.FC = () => {
       color: 'from-amber-400/20 to-amber-400/5',
       borderColor: 'border-amber-400/30',
       badge: `${products.length} itens`
-    },
-    {
-      title: 'Galeria de Trabalhos',
-      description: 'Fotos de cortes, barbas e pigmentação',
-      path: '/admin/galeria',
-      icon: Images,
-      color: 'from-amber-600/20 to-amber-600/5',
-      borderColor: 'border-amber-600/30',
-      badge: `${gallery.length} fotos`
     },
     {
       title: 'Imagens do Site',
@@ -219,9 +210,9 @@ export const AdminDashboardPage: React.FC = () => {
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="font-mono text-3xl font-black text-white">{totalPhotosCount}</span>
-                <span className="text-xs text-amber-400 font-semibold">{gallery.length} na galeria</span>
+                <span className="text-xs text-amber-400 font-semibold">{servicePhotosCount} em serviços</span>
               </div>
-              <p className="text-[11px] text-zinc-500">Galeria de trabalhos + catálogo de produtos</p>
+              <p className="text-[11px] text-zinc-500">Fotos dos serviços + catálogo de produtos</p>
             </div>
 
             {/* 4. Pedidos da Loja */}
