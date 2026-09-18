@@ -47,8 +47,8 @@ export const STATS: StatItem[] = [
   },
   {
     value: '#1',
-    label: 'Especialista em Pigmentação',
-    detail: 'Referência em definição e realce capilar',
+    label: 'Acabamento de Precisão',
+    detail: 'Foco em cortes, acabamento e estilo masculino',
   },
 ];
 
@@ -56,9 +56,9 @@ export const TEAM: TeamMember[] = [
   {
     id: 'ray-black7',
     name: 'Ray Silva (Ray Black7)',
-    role: 'Fundador & Especialista em Pigmentação',
+    role: 'Fundador & Barbeiro Profissional',
     experience: '4 anos de profissão',
-    specialty: 'Pigmentação capilar de precisão e visagismo masculino',
+    specialty: 'Cortes modernos, acabamento de precisão e visagismo masculino',
     image: BARBER_PORTRAIT_IMG,
     description: 'Profissional apaixonado por transformação visual, estilo e autoestima. Fundador do Studio Black7, focado em entregar uma experiência de alto padrão.',
     instagram: '@rayblakc7',
@@ -109,15 +109,6 @@ export const SERVICES: ServiceItem[] = [
     priceNumber: 40,
     category: 'Cortes',
     description: 'Corte completo com estilização profissional e fixação de bancada.',
-  },
-  {
-    id: 'corte-pigmentacao',
-    name: 'Corte + Pigmentação',
-    price: 'R$ 45,00',
-    priceNumber: 45,
-    category: 'Cortes',
-    description: 'Corte com a especialidade do Studio Black7: pigmentação de alta definição.',
-    popular: true,
   },
   {
     id: 'corte-relaxamento',
@@ -244,14 +235,6 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     image: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=800&q=80',
     alt: 'Barba alinhada com desenho geométrico e toalha quente',
     tag: 'Alinhamento com Navalha',
-  },
-  {
-    id: 'galeria-3',
-    title: 'Pigmentação Capilar',
-    category: 'Especialidade',
-    image: BARBER_HERO_IMG,
-    alt: 'Pigmentação capilar de precisão pelo especialista Rayblack7',
-    tag: 'Especialidade Rayblack7',
   },
   {
     id: 'galeria-4',
