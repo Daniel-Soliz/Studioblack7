@@ -35,7 +35,7 @@ export const FounderSection: React.FC = () => {
                   <div className="absolute bottom-4 left-4 right-4 p-3 rounded-xl bg-black/85 backdrop-blur-md border border-amber-400/30 flex items-center justify-between">
                     <div>
                       <p className="text-[10px] uppercase tracking-widest text-amber-400 font-extrabold">Especialidade</p>
-                      <p className="text-xs font-bold text-white">Pigmentação Capilar</p>
+                      <p className="text-xs font-bold text-white">Cortes Modernos</p>
                     </div>
                     <span className="text-xs font-extrabold text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded-md border border-amber-400/30">
                       4 Anos
@@ -57,7 +57,7 @@ export const FounderSection: React.FC = () => {
                 Ray Silva / Ray Black7
               </h2>
               <p className="text-sm uppercase tracking-widest text-amber-400 font-bold">
-                Especialista em Pigmentação Capilar &amp; Visagismo
+                Barbeiro Profissional &amp; Visagismo
               </p>
             </div>
 
@@ -66,7 +66,7 @@ export const FounderSection: React.FC = () => {
                 Com <strong>4 anos de profissão</strong> dedicados ao aprimoramento contínuo da arte da barbearia, Ray Silva (conhecido como <strong>Ray Black7</strong>) consolidou-se como um profissional apaixonado por transformação visual, estilo e autoestima na Zona Norte de São Paulo.
               </p>
               <p>
-                Sua especialização em <strong>pigmentação capilar</strong> destaca-se pela alta precisão técnica: um método que devolve linhas nítidas, preenche falhas naturais e valoriza o contorno do rosto de maneira marcante e harmônica.
+                Seu trabalho em <strong>cortes modernos</strong> se destaca pela precisão técnica, acabamento limpo e atenção ao formato do rosto, valorizando o estilo de cada cliente.
               </p>
             </div>
 
@@ -83,8 +83,8 @@ export const FounderSection: React.FC = () => {
               <div className="p-3.5 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-start gap-3">
                 <CheckCircle2 className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
                 <div>
-                  <h3 className="text-xs font-bold text-white">Pigmentação Capilar</h3>
-                  <p className="text-[11px] text-zinc-400">Especialista de referência em acabamento</p>
+                  <h3 className="text-xs font-bold text-white">Cortes Modernos</h3>
+                  <p className="text-[11px] text-zinc-400">Precisão, estilo e acabamento profissional</p>
                 </div>
               </div>
 
@@ -108,7 +108,7 @@ export const FounderSection: React.FC = () => {
             {/* Social & Booking Actions */}
             <div className="pt-2 flex flex-wrap items-center gap-4">
               <a
-                href={createWhatsAppBookingUrl('Corte + Pigmentação')}
+                href={createWhatsAppBookingUrl('Corte')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-zinc-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:brightness-105 transition-all"
