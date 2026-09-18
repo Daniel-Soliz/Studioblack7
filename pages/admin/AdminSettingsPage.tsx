@@ -14,7 +14,7 @@ import {
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useStore } from '../../context/StoreContext';
 import { SiteSettings } from '../../types';
-import { hashPassword } from '../../services/authService';
+import { AuthService } from '../../services/authService';
 
 export const AdminSettingsPage: React.FC = () => {
   const { settings, saveSettings, exportData, importData, resetDefaults } = useStore();
@@ -56,28 +56,20 @@ export const AdminSettingsPage: React.FC = () => {
       return;
     }
 
-    // Verify current password hash
-    const currentHashed = await hashPassword(currentPassword.trim());
-    const expectedHash = settings.adminPasswordHash || '067462d6fd87e8dcb22d7130736e6b2036021692166785531d2ca1f486aed709';
+    const result = await AuthService.changePassword(
+      currentPassword.trim(),
+      newPassword.trim()
+    );
 
-    if (currentHashed !== expectedHash) {
-      setPasswordError('A senha atual informada está incorreta.');
+    if (!result.success) {
+      setPasswordError(result.message);
       return;
     }
-
-    // Hash and store new password
-    const newHashed = await hashPassword(newPassword.trim());
-    const updatedSettings = {
-      ...settings,
-      adminPasswordHash: newHashed
-    };
-    saveSettings(updatedSettings);
-    setFormData(updatedSettings);
 
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
-    setPasswordFeedback('Senha administrativa alterada e criptografada com sucesso (SHA-256)!');
+    setPasswordFeedback(result.message || 'Senha administrativa atualizada com segurança!');
     setTimeout(() => setPasswordFeedback(''), 4500);
   };
 
@@ -162,12 +154,12 @@ export const AdminSettingsPage: React.FC = () => {
             </h3>
             <span className="text-[10px] uppercase font-bold text-amber-400 flex items-center gap-1">
               <Lock className="w-3 h-3" />
-              Criptografia SHA-256
+              Validação no servidor
             </span>
           </div>
 
           <p className="text-xs text-zinc-400">
-            Por segurança, a senha é armazenada apenas como digest criptográfico e nunca exposta no código público.
+            A alteração da senha é validada pelo serviço de segurança do administrador e não depende apenas deste navegador.
           </p>
 
           {passwordFeedback && (
