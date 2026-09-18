@@ -16,7 +16,14 @@ export const ServicesSection: React.FC = () => {
 
   const categories = ['Todos', 'Cortes', 'Barba', 'Penteado / Acabamento', 'Química / Alisamento', 'Coloração'];
 
-  const activeServices = services.filter(s => s.status !== 'inactive');
+  const activeServices = services.filter((s) => {
+    const normalizedName = s.name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+
+    return s.status !== 'inactive' && !normalizedName.includes('pigmentacao capilar');
+  });
   const filteredServices = selectedCategory === 'Todos'
     ? activeServices
     : activeServices.filter((s) => s.category === selectedCategory);
