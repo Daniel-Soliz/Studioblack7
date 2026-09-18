@@ -257,12 +257,10 @@ export const CheckoutPage: React.FC = () => {
               {pixPayment.ticketUrl && (
                 <a
                   href={pixPayment.ticketUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 rounded-xl border border-amber-400/30 text-amber-300 font-bold text-sm flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-xl bg-amber-400 text-zinc-950 font-black text-sm flex items-center justify-center gap-2"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  Abrir instruções do Mercado Pago
+                  Abrir pagamento Pix no celular
                 </a>
               )}
 
