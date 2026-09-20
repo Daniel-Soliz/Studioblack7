@@ -687,12 +687,17 @@ export class StorageService {
 
   // ORDERS
   static getOrders(): Order[] {
-    const orders = this.getItem<Order[]>(STORAGE_KEYS.ORDERS, []);
-    if (!orders || orders.length === 0) {
-      this.setItem(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
-      return INITIAL_ORDERS;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.ORDERS);
+      if (raw === null) {
+        this.setItem(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
+        return INITIAL_ORDERS;
+      }
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
     }
-    return orders;
   }
 
   static saveOrders(orders: Order[]): void {
@@ -751,6 +756,33 @@ export class StorageService {
       return true;
     }
     return false;
+  }
+
+  static saveOrder(order: Order): Order {
+    const orders = this.getOrders();
+    const now = new Date().toISOString();
+    const normalized: Order = {
+      ...order,
+      id: order.id || `ord-${Date.now()}`,
+      orderNumber: order.orderNumber || `SB7-${Date.now().toString().slice(-6)}`,
+      createdAt: order.createdAt || now,
+      updatedAt: now,
+    };
+
+    const index = orders.findIndex(o => o.id === normalized.id);
+    if (index >= 0) orders[index] = normalized;
+    else orders.unshift(normalized);
+
+    this.saveOrders(orders);
+    return normalized;
+  }
+
+  static deleteOrder(orderId: string): boolean {
+    const orders = this.getOrders();
+    const next = orders.filter(o => o.id !== orderId);
+    if (next.length === orders.length) return false;
+    this.saveOrders(next);
+    return true;
   }
 
   // INVENTORY
