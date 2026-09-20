@@ -119,6 +119,8 @@ export const AdminOrdersPage: React.FC = () => {
         return <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold uppercase">Pendente</span>;
       case 'confirmed':
         return <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold uppercase">Confirmado</span>;
+      case 'processing':
+        return <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[10px] font-bold uppercase">Processando</span>;
       case 'preparing':
         return <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] font-bold uppercase">Em Preparação</span>;
       case 'shipped':
@@ -462,7 +464,7 @@ export const AdminOrdersPage: React.FC = () => {
                       {selectedOrder.customer.address.neighborhood && ` - ${selectedOrder.customer.address.neighborhood}`}
                       <br />
                       {selectedOrder.customer.address.city} - {selectedOrder.customer.address.state}
-                      {selectedOrder.customer.address.postalCode && ` (${selectedOrder.customer.address.postalCode})`}
+                      {(selectedOrder.customer.address.postalCode || selectedOrder.customer.address.zipCode) && ` (${selectedOrder.customer.address.postalCode || selectedOrder.customer.address.zipCode})`}
                     </p>
                   )}
                 </div>
@@ -474,21 +476,54 @@ export const AdminOrdersPage: React.FC = () => {
                   Itens Comprados
                 </span>
                 <div className="divide-y divide-zinc-800 border border-zinc-800 rounded-xl overflow-hidden bg-black/40">
-                  {selectedOrder.items.map((item, idx) => (
-                    <div key={idx} className="p-3 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-bold text-white block">{item.name}</span>
-                        <span className="text-[11px] text-zinc-500">
-                          {item.quantity} un. x R$ {item.unitPrice.toFixed(2).replace('.', ',')}
+                  {selectedOrder.items.length === 0 ? (
+                    <div className="p-4 text-xs text-zinc-500 text-center">
+                      Nenhum item foi registrado neste pedido.
+                    </div>
+                  ) : selectedOrder.items.map((item, idx) => {
+                    const itemName = item.name || item.productName || 'Produto';
+                    const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
+                    const totalPrice = Number(item.totalPrice ?? (unitPrice * item.quantity));
+                    return (
+                      <div key={idx} className="p-3 flex items-center justify-between gap-4 text-xs">
+                        <div className="min-w-0">
+                          <span className="font-bold text-white block">{itemName}</span>
+                          <span className="text-[11px] text-zinc-500">
+                            {item.quantity} un. x R$ {unitPrice.toFixed(2).replace('.', ',')}
+                          </span>
+                          {item.sku && (
+                            <span className="text-[10px] text-zinc-600 block mt-1">SKU: {item.sku}</span>
+                          )}
+                        </div>
+                        <span className="font-mono font-bold text-white whitespace-nowrap">
+                          R$ {totalPrice.toFixed(2).replace('.', ',')}
                         </span>
                       </div>
-                      <span className="font-mono font-bold text-white">
-                        R$ {item.totalPrice.toFixed(2).replace('.', ',')}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
+
+              {/* Payment Information */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-4 rounded-xl bg-black/40 border border-zinc-800">
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Forma de pagamento</span>
+                  <p className="text-sm font-bold text-white mt-1">{selectedOrder.paymentMethod || 'Não informado'}</p>
+                </div>
+                <div className="p-4 rounded-xl bg-black/40 border border-zinc-800">
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Status do pagamento</span>
+                  <p className={`text-sm font-bold mt-1 ${selectedOrder.paymentStatus === 'paid' ? 'text-emerald-400' : selectedOrder.paymentStatus === 'failed' ? 'text-red-400' : selectedOrder.paymentStatus === 'refunded' ? 'text-blue-400' : 'text-amber-400'}`}>
+                    {selectedOrder.paymentStatus === 'paid' ? 'Pago' : selectedOrder.paymentStatus === 'failed' ? 'Falhou' : selectedOrder.paymentStatus === 'refunded' ? 'Reembolsado' : 'Pendente'}
+                  </p>
+                </div>
+              </div>
+
+              {selectedOrder.notes && (
+                <div className="p-4 rounded-xl bg-black/40 border border-zinc-800">
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Observações</span>
+                  <p className="text-xs text-zinc-300 mt-2 leading-relaxed whitespace-pre-wrap">{selectedOrder.notes}</p>
+                </div>
+              )}
 
               {/* Financial Summary */}
               <div className="p-4 rounded-xl bg-black/40 border border-zinc-800 space-y-2 text-xs">
@@ -508,15 +543,35 @@ export const AdminOrdersPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* WhatsApp CTA Action */}
-              <div className="pt-2">
+              {/* Actions */}
+              <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => openWhatsAppWithCustomer(selectedOrder)}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 hover:brightness-105 transition-all flex items-center justify-center gap-2"
+                  className="py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-zinc-950 font-black text-xs uppercase tracking-wider hover:brightness-105 transition-all flex items-center justify-center gap-2"
                 >
                   <MessageCircle className="w-4 h-4 fill-zinc-950" />
-                  <span>Falar com o Cliente no WhatsApp ({selectedOrder.customer.phone})</span>
+                  <span>WhatsApp</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingOrder(JSON.parse(JSON.stringify(selectedOrder)));
+                    setIsCreating(false);
+                    setSelectedOrder(null);
+                  }}
+                  className="py-3 px-4 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-300 font-black text-xs uppercase tracking-wider hover:bg-blue-500 hover:text-white transition-all flex items-center justify-center gap-2"
+                >
+                  <Pencil className="w-4 h-4" />
+                  <span>Editar</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteOrder(selectedOrder)}
+                  className="py-3 px-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 font-black text-xs uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Excluir</span>
                 </button>
               </div>
 
