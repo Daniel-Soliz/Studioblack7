@@ -15,8 +15,6 @@ export const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isHome = location.pathname === '/';
-
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -26,36 +24,18 @@ export const Header: React.FC = () => {
   }, []);
 
   const navLinks = [
-    { label: 'Início', path: '/', hash: '#inicio' },
-    { label: 'Sobre', path: '/sobre', hash: '#sobre' },
-    { label: 'Serviços', path: '/servicos', hash: '#servicos' },
-    { label: 'Loja', path: '/loja', hash: '' },
-    { label: 'Localização', path: '/localizacao', hash: '#localizacao' },
-    { label: 'Contato', path: '/contato', hash: '#contato' },
+    { label: 'Início', path: '/' },
+    { label: 'Sobre', path: '/sobre' },
+    { label: 'Serviços', path: '/servicos' },
+    { label: 'Loja', path: '/loja' },
+    { label: 'Localização', path: '/localizacao' },
+    { label: 'Contato', path: '/contato' },
   ];
 
   const handleNavClick = (link: typeof navLinks[0]) => {
     setMobileMenuOpen(false);
-
-    if (link.path === '/loja') {
-      navigate('/loja');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-
-    if (isHome && link.hash) {
-      const el = document.querySelector(link.hash);
-      if (el) {
-        const headerOffset = 80;
-        const elPos = el.getBoundingClientRect().top;
-        const offsetPos = elPos + window.pageYOffset - headerOffset;
-        window.scrollTo({ top: offsetPos, behavior: 'smooth' });
-        return;
-      }
-    }
-
     navigate(link.path);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   };
 
   return (
