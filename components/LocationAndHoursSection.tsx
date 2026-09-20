@@ -97,13 +97,13 @@ export const LocationAndHoursSection: React.FC = () => {
             <div className="relative aspect-[16/9] sm:aspect-[21/9] rounded-xl overflow-hidden bg-zinc-950 border border-zinc-800 mt-4 group">
               <iframe
                 title="Localização do Studio Black7 no Google Maps"
-                src="https://maps.google.com/maps?q=Tv.+Uni%C3%A3o,+4+-+Jardim+Paulistano,+S%C3%A3o+Paulo+-+SP&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                src="https://maps.google.com/maps?q=R.+Boa+Vista+-+Jardim+Paulistano,+S%C3%A3o+Paulo+-+SP&t=&z=16&ie=UTF8&iwloc=&output=embed"
                 className="w-full h-full border-0 grayscale contrast-125 opacity-70 group-hover:opacity-100 transition-opacity duration-300"
                 loading="lazy"
               />
               <div className="absolute top-3 left-3 px-3 py-1 rounded-md bg-black/85 backdrop-blur-md border border-amber-400/30 text-[11px] font-bold text-amber-300 flex items-center gap-1.5 pointer-events-none">
                 <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                <span>Tv. União, 4 · Jd. Paulistano</span>
+                <span>R. Boa Vista · Jardim Paulistano</span>
               </div>
             </div>
           </div>
