@@ -8,18 +8,24 @@ import {
   Check, 
   Clock, 
   Truck, 
-  AlertCircle 
+  AlertCircle,
+  Plus,
+  Pencil,
+  Trash2,
+  Save
 } from 'lucide-react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useStore } from '../../context/StoreContext';
 import { Order } from '../../types';
 
 export const AdminOrdersPage: React.FC = () => {
-  const { orders, updateOrderStatus } = useStore();
+  const { orders, updateOrderStatus, saveOrder, deleteOrder } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [feedback, setFeedback] = useState('');
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   const filteredOrders = orders.filter(o => {
     if (searchTerm.trim()) {
@@ -44,6 +50,67 @@ export const AdminOrdersPage: React.FC = () => {
       setSelectedOrder(prev => prev ? { ...prev, status, paymentStatus: payment || prev.paymentStatus } : null);
     }
     setTimeout(() => setFeedback(''), 3000);
+  };
+
+  const emptyOrder = (): Order => {
+    const now = new Date().toISOString();
+    return {
+      id: `ord-${Date.now()}`,
+      orderNumber: `SB7-${Date.now().toString().slice(-6)}`,
+      customer: {
+        name: '',
+        email: '',
+        phone: '',
+        address: {
+          street: '',
+          number: '',
+          neighborhood: '',
+          city: 'São Paulo',
+          state: 'SP',
+          postalCode: ''
+        }
+      },
+      items: [],
+      subtotal: 0,
+      shipping: 0,
+      shippingMethod: 'Retirada no Studio Black7',
+      total: 0,
+      status: 'pending',
+      paymentStatus: 'pending',
+      paymentMethod: 'A combinar',
+      notes: '',
+      createdAt: now,
+      updatedAt: now
+    };
+  };
+
+  const handleSaveOrder = () => {
+    if (!editingOrder) return;
+    if (!editingOrder.customer.name.trim() || !editingOrder.customer.phone.trim()) {
+      setFeedback('Preencha pelo menos o nome e o telefone do cliente.');
+      setTimeout(() => setFeedback(''), 3000);
+      return;
+    }
+    const subtotal = Number(editingOrder.subtotal) || 0;
+    const shipping = Number(editingOrder.shipping) || 0;
+    const total = Number(editingOrder.total) || subtotal + shipping;
+    const saved = saveOrder({ ...editingOrder, subtotal, shipping, total });
+    setEditingOrder(null);
+    setIsCreating(false);
+    setSelectedOrder(saved);
+    setFeedback(isCreating ? 'Pedido adicionado com sucesso.' : 'Pedido editado com sucesso.');
+    setTimeout(() => setFeedback(''), 3000);
+  };
+
+  const handleDeleteOrder = (order: Order) => {
+    const ok = window.confirm(`Excluir o pedido #${order.orderNumber}? Esta ação não pode ser desfeita.`);
+    if (!ok) return;
+    if (deleteOrder(order.id)) {
+      if (selectedOrder?.id === order.id) setSelectedOrder(null);
+      if (editingOrder?.id === order.id) setEditingOrder(null);
+      setFeedback('Pedido excluído com sucesso.');
+      setTimeout(() => setFeedback(''), 3000);
+    }
   };
 
   const getStatusBadge = (status: Order['status']) => {
@@ -84,6 +151,17 @@ export const AdminOrdersPage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setEditingOrder(emptyOrder());
+                setIsCreating(true);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400 text-zinc-950 text-xs font-black uppercase tracking-wider hover:brightness-105 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Adicionar Pedido</span>
+            </button>
             <div className="relative flex-1 sm:w-60">
               <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -177,15 +255,36 @@ export const AdminOrdersPage: React.FC = () => {
                         </span>
                       </td>
 
-                      <td className="py-3 px-4 text-right space-x-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedOrder(order)}
-                          className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-amber-400 hover:text-zinc-950 text-zinc-200 text-xs font-bold inline-flex items-center gap-1 transition-colors"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Detalhes</span>
-                        </button>
+                      <td className="py-3 px-4 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOrder(order)}
+                            className="p-2 rounded-lg bg-zinc-800 hover:bg-amber-400 hover:text-zinc-950 text-zinc-200 transition-colors"
+                            title="Ver detalhes"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingOrder(JSON.parse(JSON.stringify(order)));
+                              setIsCreating(false);
+                            }}
+                            className="p-2 rounded-lg bg-zinc-800 hover:bg-blue-500 text-zinc-200 transition-colors"
+                            title="Editar pedido"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteOrder(order)}
+                            className="p-2 rounded-lg bg-zinc-800 hover:bg-red-600 text-zinc-200 transition-colors"
+                            title="Excluir pedido"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -194,6 +293,101 @@ export const AdminOrdersPage: React.FC = () => {
             </table>
           </div>
         </div>
+
+        {/* Add / Edit Order Modal */}
+        {editingOrder && (
+          <div className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="max-w-3xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+                <div>
+                  <h3 className="font-['Cinzel'] font-bold text-lg text-white">
+                    {isCreating ? 'Adicionar Pedido' : `Editar Pedido #${editingOrder.orderNumber}`}
+                  </h3>
+                  <p className="text-xs text-zinc-500 mt-1">Edite os dados do cliente, status e valores do pedido.</p>
+                </div>
+                <button type="button" onClick={() => setEditingOrder(null)} className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="space-y-1.5">
+                  <span className="text-xs font-bold text-zinc-400">Número do pedido</span>
+                  <input value={editingOrder.orderNumber} onChange={e => setEditingOrder({...editingOrder, orderNumber: e.target.value})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                </label>
+                <label className="space-y-1.5">
+                  <span className="text-xs font-bold text-zinc-400">Cliente</span>
+                  <input value={editingOrder.customer.name} onChange={e => setEditingOrder({...editingOrder, customer:{...editingOrder.customer, name:e.target.value}})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                </label>
+                <label className="space-y-1.5">
+                  <span className="text-xs font-bold text-zinc-400">Telefone / WhatsApp</span>
+                  <input value={editingOrder.customer.phone} onChange={e => setEditingOrder({...editingOrder, customer:{...editingOrder.customer, phone:e.target.value}})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                </label>
+                <label className="space-y-1.5">
+                  <span className="text-xs font-bold text-zinc-400">E-mail</span>
+                  <input value={editingOrder.customer.email} onChange={e => setEditingOrder({...editingOrder, customer:{...editingOrder.customer, email:e.target.value}})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-xs font-bold text-zinc-400">Status do pedido</span>
+                  <select value={editingOrder.status} onChange={e => setEditingOrder({...editingOrder, status:e.target.value as Order['status']})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none">
+                    <option value="pending">Pendente</option>
+                    <option value="confirmed">Confirmado</option>
+                    <option value="processing">Processando</option>
+                    <option value="preparing">Em preparação</option>
+                    <option value="shipped">Pronto / Enviado</option>
+                    <option value="completed">Concluído</option>
+                    <option value="cancelled">Cancelado</option>
+                  </select>
+                </label>
+                <label className="space-y-1.5">
+                  <span className="text-xs font-bold text-zinc-400">Pagamento</span>
+                  <select value={editingOrder.paymentStatus} onChange={e => setEditingOrder({...editingOrder, paymentStatus:e.target.value as Order['paymentStatus']})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none">
+                    <option value="pending">Pendente</option>
+                    <option value="paid">Pago</option>
+                    <option value="failed">Falhou</option>
+                    <option value="refunded">Reembolsado</option>
+                  </select>
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-xs font-bold text-zinc-400">Subtotal (R$)</span>
+                  <input type="number" min="0" step="0.01" value={editingOrder.subtotal} onChange={e => setEditingOrder({...editingOrder, subtotal:Number(e.target.value)})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                </label>
+                <label className="space-y-1.5">
+                  <span className="text-xs font-bold text-zinc-400">Frete (R$)</span>
+                  <input type="number" min="0" step="0.01" value={editingOrder.shipping} onChange={e => setEditingOrder({...editingOrder, shipping:Number(e.target.value)})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                </label>
+                <label className="space-y-1.5">
+                  <span className="text-xs font-bold text-zinc-400">Total (R$)</span>
+                  <input type="number" min="0" step="0.01" value={editingOrder.total} onChange={e => setEditingOrder({...editingOrder, total:Number(e.target.value)})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                </label>
+                <label className="space-y-1.5">
+                  <span className="text-xs font-bold text-zinc-400">Forma de pagamento</span>
+                  <input value={editingOrder.paymentMethod} onChange={e => setEditingOrder({...editingOrder, paymentMethod:e.target.value})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                </label>
+                <label className="space-y-1.5 sm:col-span-2">
+                  <span className="text-xs font-bold text-zinc-400">Entrega / retirada</span>
+                  <input value={editingOrder.shippingMethod} onChange={e => setEditingOrder({...editingOrder, shippingMethod:e.target.value})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                </label>
+                <label className="space-y-1.5 sm:col-span-2">
+                  <span className="text-xs font-bold text-zinc-400">Observações</span>
+                  <textarea rows={3} value={editingOrder.notes || ''} onChange={e => setEditingOrder({...editingOrder, notes:e.target.value})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none resize-none" />
+                </label>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <button type="button" onClick={() => setEditingOrder(null)} className="sm:flex-1 py-3 rounded-xl bg-zinc-800 text-zinc-200 font-bold text-xs uppercase tracking-wider">
+                  Cancelar
+                </button>
+                <button type="button" onClick={handleSaveOrder} className="sm:flex-1 py-3 rounded-xl bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider inline-flex items-center justify-center gap-2">
+                  <Save className="w-4 h-4" />
+                  <span>{isCreating ? 'Adicionar Pedido' : 'Salvar Alterações'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Order Details Modal */}
         {selectedOrder && (
