@@ -15,13 +15,13 @@ export const INSTAGRAM_RAY_URL = 'https://instagram.com/rayblakc7';
 export const INSTAGRAM_STUDIO_URL = 'https://instagram.com/barber_black7_';
 
 export const ADDRESS = {
-  street: 'Tv. União, 4',
+  street: 'R. Boa Vista',
   neighborhood: 'Jardim Paulistano',
   zone: 'Zona Norte',
   city: 'São Paulo',
   state: 'SP',
-  full: 'Tv. União, 4 — Jardim Paulistano — Zona Norte, São Paulo/SP',
-  googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Tv.+Uni%C3%A3o,+4+-+Jardim+Paulistano,+S%C3%A3o+Paulo+-+SP',
+  full: 'R. Boa Vista — Jardim Paulistano (Zona Norte) — São Paulo/SP',
+  googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=R.+Boa+Vista+-+Jardim+Paulistano,+S%C3%A3o+Paulo+-+SP',
 };
 
 export const BUSINESS_HOURS = {
