@@ -31,6 +31,8 @@ interface StoreContextType {
   saveContent: (c: SiteContent) => void;
   saveSettings: (s: SiteSettings) => void;
   updateOrderStatus: (orderId: string, status: Order['status'], paymentStatus?: Order['paymentStatus']) => boolean;
+  saveOrder: (order: Order) => Order;
+  deleteOrder: (orderId: string) => boolean;
   createOrder: (order: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'>) => Order;
   logActivity: (action: string, detail: string) => void;
   exportData: () => string;
@@ -210,6 +212,25 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return res;
   };
 
+  const saveOrder = (order: Order) => {
+    const saved = StorageService.saveOrder(order);
+    StorageService.logActivity('Pedido Salvo', `Pedido #${saved.orderNumber} salvo pelo painel administrativo.`);
+    void CloudStoreService.save('orders', StorageService.getOrders()).catch((error) => console.error('Falha ao sincronizar pedidos:', error));
+    refreshData();
+    return saved;
+  };
+
+  const deleteOrder = (orderId: string) => {
+    const target = StorageService.getOrders().find(o => o.id === orderId);
+    const deleted = StorageService.deleteOrder(orderId);
+    if (deleted) {
+      StorageService.logActivity('Pedido Excluído', `Pedido #${target?.orderNumber || orderId} removido pelo painel administrativo.`);
+      void CloudStoreService.save('orders', StorageService.getOrders()).catch((error) => console.error('Falha ao sincronizar pedidos:', error));
+      refreshData();
+    }
+    return deleted;
+  };
+
   const createOrder = (orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'>) => {
     const newOrd = StorageService.createOrder(orderData);
     StorageService.logActivity('Novo Pedido Recebido', `Pedido #${newOrd.orderNumber} - R$ ${newOrd.total.toFixed(2)}.`);
@@ -259,6 +280,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         saveContent,
         saveSettings,
         updateOrderStatus,
+        saveOrder,
+        deleteOrder,
         createOrder,
         logActivity,
         exportData,
