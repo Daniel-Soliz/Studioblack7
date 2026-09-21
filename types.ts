@@ -244,7 +244,6 @@ export interface SiteContent {
   heroBadge?: string;
   heroTagline?: string;
   heroImageUrl?: string;
-  heroButtonBookingText?: string;
   heroButtonServicesText?: string;
   heroButtonStoreText?: string;
   aboutTitle: string;
@@ -259,8 +258,6 @@ export interface SiteContent {
   storeTitle: string;
   storeSubtitle: string;
   storeBannerUrl?: string;
-  bookingTitle?: string;
-  bookingSubtitle?: string;
   locationTitle?: string;
   locationDescription?: string;
   footerText?: string;
