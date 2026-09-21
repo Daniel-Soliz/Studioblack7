@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShieldCheck, Lock, Mail, ArrowLeft, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, ArrowLeft, AlertCircle, KeyRound } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { getAssetUrl } from '../../utils';
@@ -98,6 +98,16 @@ export const AdminLoginPage: React.FC = () => {
                   placeholder="••••••••••••"
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/60 border border-zinc-750 focus:border-amber-400 focus:outline-none text-sm text-white placeholder-zinc-500"
                 />
+              </div>
+              <div className="mt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setError('A recuperação de senha por e-mail/SMS está sendo configurada com segurança. Assim que o envio estiver ativo, esta opção permitirá redefinir a senha sem precisar de suporte.')}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 hover:text-amber-300 transition-colors"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Esqueceu sua senha?</span>
+                </button>
               </div>
             </div>
 
