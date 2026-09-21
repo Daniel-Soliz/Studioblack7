@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Header,
   ContactSection,
-  BookingSection,
   Footer,
   FloatingWhatsApp,
 } from '../components';
@@ -13,7 +12,6 @@ export const ContactPage: React.FC = () => {
       <Header />
       <main className="flex-grow pt-16">
         <ContactSection />
-        <BookingSection />
       </main>
       <Footer />
       <FloatingWhatsApp />
