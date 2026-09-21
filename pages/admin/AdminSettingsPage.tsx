@@ -292,7 +292,7 @@ export const AdminSettingsPage: React.FC = () => {
                 3. Informações Comerciais &amp; Contato
               </h3>
               <p className="text-[11px] text-zinc-400 mt-0.5">
-                Altere telefone, WhatsApp de agendamento, horários de funcionamento e endereço da barbearia.
+                Altere telefone, WhatsApp principal, horários de funcionamento e endereço da barbearia.
               </p>
             </div>
 
