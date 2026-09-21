@@ -8,7 +8,6 @@ export { FeaturedProductsSection } from './FeaturedProductsSection';
 export { SocialProofSection } from './SocialProofSection';
 export { PositioningSection } from './PositioningSection';
 export { LocationAndHoursSection } from './LocationAndHoursSection';
-export { BookingSection } from './BookingSection';
 export { ContactSection } from './ContactSection';
 export { Footer } from './Footer';
 export { FloatingWhatsApp } from './FloatingWhatsApp';
