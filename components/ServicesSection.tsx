@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { MessageCircle, Scissors, Sparkles } from 'lucide-react';
+import { Scissors, Sparkles } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-import { createWhatsAppBookingUrl } from '../data/barbershop';
 
 const realWorkImages = [
   { src: `${import.meta.env.BASE_URL}services/studio-black7-work-1.webp`, alt: 'Corte masculino com acabamento e degradê - Studio Black7' },
@@ -116,17 +115,6 @@ export const ServicesSection: React.FC = () => {
                       {service.price}
                     </span>
                   </div>
-
-                  <a
-                    href={createWhatsAppBookingUrl(service.name)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-800 group-hover:bg-amber-400 text-zinc-200 group-hover:text-zinc-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-sm"
-                    title={`Agendar ${service.name} no WhatsApp`}
-                  >
-                    <MessageCircle className="w-3.5 h-3.5" />
-                    <span>Agendar</span>
-                  </a>
                 </div>
               </div>
             </div>
@@ -168,17 +156,6 @@ export const ServicesSection: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-14 text-center">
-          <a
-            href={createWhatsAppBookingUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-zinc-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-amber-500/20 hover:brightness-105 transition-all"
-          >
-            <Scissors className="w-4 h-4 text-zinc-950" />
-            <span>Consultar Horários e Agendar Serviço</span>
-          </a>
-        </div>
       </div>
     </section>
   );
