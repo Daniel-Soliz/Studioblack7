@@ -133,7 +133,7 @@ export const AdminServicesPage: React.FC = () => {
           <div>
             <h2 className="text-base font-bold text-white">Tabela de Serviços ({services.length})</h2>
             <p className="text-xs text-zinc-400">
-              Edite preço, nome, descrição e adicione uma foto real do trabalho para o cliente visualizar antes de agendar.
+              Edite preço, nome, descrição e adicione uma foto real do trabalho para o cliente visualizar.
             </p>
           </div>
 
