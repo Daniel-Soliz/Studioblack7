@@ -3,7 +3,6 @@ import {
   Header,
   LocationAndHoursSection,
   ContactSection,
-  BookingSection,
   Footer,
   FloatingWhatsApp,
 } from '../components';
@@ -15,7 +14,6 @@ export const LocationPage: React.FC = () => {
       <main className="flex-grow pt-16">
         <LocationAndHoursSection />
         <ContactSection />
-        <BookingSection />
       </main>
       <Footer />
       <FloatingWhatsApp />
