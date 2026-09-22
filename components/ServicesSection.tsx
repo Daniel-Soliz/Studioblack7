@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Scissors, Sparkles } from 'lucide-react';
+import { MessageCircle, Scissors, Sparkles, Clock3 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 const realWorkImages = [
@@ -10,22 +10,47 @@ const realWorkImages = [
 ];
 
 export const ServicesSection: React.FC = () => {
-  const { services } = useStore();
+  const { services, settings } = useStore();
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
 
   const categories = ['Todos', 'Cortes', 'Barba', 'Penteado / Acabamento', 'Química / Alisamento', 'Coloração'];
 
-  const activeServices = services.filter((s) => {
-    const normalizedName = s.name
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase();
+  const categoryOrder = ['Cortes', 'Barba', 'Penteado / Acabamento', 'Química / Alisamento', 'Coloração'];
 
-    return s.status !== 'inactive' && !normalizedName.includes('pigmentacao capilar');
-  });
+  const activeServices = services
+    .filter((s) => {
+      const normalizedName = s.name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+      return s.status !== 'inactive' && !normalizedName.includes('pigmentacao capilar');
+    })
+    .sort((a, b) => {
+      const categoryDiff = categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category);
+      if (categoryDiff !== 0) return categoryDiff;
+      return (a.order ?? 999) - (b.order ?? 999);
+    });
+
   const filteredServices = selectedCategory === 'Todos'
     ? activeServices
     : activeServices.filter((s) => s.category === selectedCategory);
+
+  const whatsappRaw = (settings.whatsappRaw || settings.whatsapp || '').replace(/\D/g, '');
+
+  const createServiceWhatsAppUrl = (serviceName: string, price: string, duration?: string) => {
+    const message = [
+      'Olá! Vim pelo site do Studio Black7.',
+      '',
+      `Tenho interesse no serviço: *${serviceName}*`,
+      `Valor informado: *${price}*`,
+      duration ? `Duração estimada: *${duration}*` : '',
+      '',
+      'Gostaria de consultar os horários disponíveis.'
+    ].filter(Boolean).join('\n');
+
+    return `https://wa.me/${whatsappRaw}?text=${encodeURIComponent(message)}`;
+  };
 
   return (
     <section id="servicos" className="py-20 relative scroll-mt-20">
@@ -38,7 +63,7 @@ export const ServicesSection: React.FC = () => {
             Serviços
           </h2>
           <p className="text-base sm:text-lg text-zinc-300 font-medium">
-            Precisão, técnica e estilo em cada atendimento.
+            Escolha o serviço desejado e fale diretamente com o Studio Black7 pelo WhatsApp.
           </p>
           <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mt-2" />
         </div>
@@ -105,16 +130,38 @@ export const ServicesSection: React.FC = () => {
                         {service.description}
                       </p>
                     )}
+                    {service.duration && (
+                      <div className="inline-flex items-center gap-1.5 mt-3 text-[11px] text-zinc-400">
+                        <Clock3 className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Duração estimada: {service.duration}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="pt-5 mt-4 border-t border-zinc-800/80 flex items-center justify-between gap-3">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Valor Oficial</span>
-                    <span className="font-mono font-black text-xl text-amber-400">
-                      {service.price}
+                <div className="pt-5 mt-4 border-t border-zinc-800/80 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Valor Oficial</span>
+                      <span className="font-mono font-black text-xl text-amber-400">
+                        {service.price}
+                      </span>
+                    </div>
+                    <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-bold">
+                      Atendimento via WhatsApp
                     </span>
                   </div>
+
+                  <a
+                    href={createServiceWhatsAppUrl(service.name, service.price, service.duration)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/10"
+                    aria-label={`Consultar ${service.name} pelo WhatsApp`}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Consultar no WhatsApp</span>
+                  </a>
                 </div>
               </div>
             </div>
