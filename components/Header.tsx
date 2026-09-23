@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, MessageCircle, ShoppingBag, Shield } from 'lucide-react';
+import { Menu, X, MessageCircle, ShoppingBag, Shield, Download } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useStore } from '../context/StoreContext';
 import { createWhatsAppBookingUrl } from '../data/barbershop';
 import { STUDIO_BLACK_LOGO } from '../assets/images';
 import { getAssetUrl } from '../utils';
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
 export const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
   const { totalItems } = useCart();
   const { settings } = useStore();
   const location = useLocation();
@@ -19,9 +26,54 @@ export const Header: React.FC = () => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
+
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    setIsAppInstalled(standalone);
+
+    const handleBeforeInstall = (event: Event) => {
+      event.preventDefault();
+      setDeferredInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+
+    const handleInstalled = () => {
+      setIsAppInstalled(true);
+      setDeferredInstallPrompt(null);
+    };
+
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', handleInstalled);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', handleInstalled);
+    };
   }, []);
+
+  const handleInstallApp = async () => {
+    setMobileMenuOpen(false);
+
+    if (deferredInstallPrompt) {
+      await deferredInstallPrompt.prompt();
+      const choice = await deferredInstallPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        setIsAppInstalled(true);
+      }
+      setDeferredInstallPrompt(null);
+      return;
+    }
+
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (isIOS) {
+      window.alert('Para instalar o Studio Black7 no iPhone: toque em Compartilhar e depois em “Adicionar à Tela de Início”.');
+      return;
+    }
+
+    window.alert('No navegador do celular, abra o menu e escolha “Instalar app” ou “Adicionar à tela inicial”.');
+  };
 
   const navLinks = [
     { label: 'Início', path: '/' },
@@ -101,6 +153,18 @@ export const Header: React.FC = () => {
 
         {/* Right Actions: Cart, Agendar & Admin */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {!isAppInstalled && (
+            <button
+              type="button"
+              onClick={() => void handleInstallApp()}
+              className="hidden md:inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-amber-400/30 hover:border-amber-400 text-amber-300 hover:text-amber-200 text-xs font-bold transition-all"
+              title="Instalar Studio Black7 no celular ou computador"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Instalar App</span>
+            </button>
+          )}
+
           {/* Cart Icon with Counter */}
           <Link
             to="/carrinho"
@@ -164,6 +228,17 @@ export const Header: React.FC = () => {
           </nav>
 
           <div className="pt-3 border-t border-zinc-800/80 flex flex-col gap-2.5">
+            {!isAppInstalled && (
+              <button
+                type="button"
+                onClick={() => void handleInstallApp()}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-zinc-900 border border-amber-400/30 text-amber-300 font-black text-xs uppercase tracking-wider"
+              >
+                <Download className="w-4 h-4" />
+                <span>Instalar Studio Black7</span>
+              </button>
+            )}
+
             <Link
               to="/carrinho"
               onClick={() => setMobileMenuOpen(false)}
