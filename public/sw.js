@@ -1,9 +1,10 @@
-const CACHE_NAME = 'studio-black7-pwa-v2';
+const CACHE_NAME = 'studio-black7-pwa-v3';
 const BASE_PATH = '/Studioblack7/';
 const APP_SHELL = [
   BASE_PATH,
   BASE_PATH + 'manifest.webmanifest',
-  BASE_PATH + 'app-icon.png'
+  BASE_PATH + 'icon-192.png',
+  BASE_PATH + 'icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
