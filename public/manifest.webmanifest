@@ -12,7 +12,7 @@
   "categories": ["business", "shopping", "lifestyle"],
   "icons": [
     {
-      "src": "/Studioblack7/images/ray_logo.png",
+      "src": "/Studioblack7/app-icon.png",
       "sizes": "any",
       "type": "image/png",
       "purpose": "any maskable"
