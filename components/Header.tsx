@@ -20,6 +20,7 @@ export const Header: React.FC = () => {
   );
   const [isAppInstalled, setIsAppInstalled] = useState(false);
   const [installMessage, setInstallMessage] = useState('');
+  const installReady = Boolean(deferredInstallPrompt || window.__sb7InstallPrompt);
   const { totalItems } = useCart();
   const { settings } = useStore();
   const location = useLocation();
@@ -124,7 +125,7 @@ export const Header: React.FC = () => {
     }
 
     if (isAndroid) {
-      setInstallMessage('A instalação automática ainda não foi liberada pelo navegador. Abra esta página no Google Chrome e toque novamente em “Instalar App”.');
+      setInstallMessage('O Chrome ainda está preparando a instalação. Deixe esta página aberta por alguns segundos e use o site normalmente. Assim que o navegador liberar, o botão ficará pronto e um toque abrirá a tela nativa de instalação.');
       return;
     }
 
@@ -213,11 +214,16 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={() => void handleInstallApp()}
-              className="hidden md:inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-amber-400/30 hover:border-amber-400 text-amber-300 hover:text-amber-200 text-xs font-bold transition-all"
-              title="Instalar Studio Black7 no celular ou computador"
+              disabled={!installReady}
+              className={`hidden md:inline-flex items-center gap-2 px-3.5 py-2 rounded-full border text-xs font-bold transition-all ${
+                installReady
+                  ? 'bg-zinc-900/90 hover:bg-zinc-800 border-amber-400/30 hover:border-amber-400 text-amber-300 hover:text-amber-200'
+                  : 'bg-zinc-900/70 border-zinc-700 text-zinc-500 cursor-wait'
+              }`}
+              title={installReady ? 'Instalar Studio Black7' : 'Preparando instalação'}
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Instalar App</span>
+              <span>{installReady ? 'Instalar App' : 'Preparando App...'}</span>
             </button>
           )}
 
@@ -288,11 +294,21 @@ export const Header: React.FC = () => {
               <button
                 type="button"
                 onClick={() => void handleInstallApp()}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20"
+                disabled={!installReady}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
+                  installReady
+                    ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-zinc-950 shadow-lg shadow-amber-500/20'
+                    : 'bg-zinc-900 border border-zinc-700 text-zinc-500 cursor-wait'
+                }`}
               >
                 <Download className="w-4 h-4" />
-                <span>Instalar App</span>
+                <span>{installReady ? 'Instalar App' : 'Preparando instalação...'}</span>
               </button>
+            )}
+            {!isAppInstalled && !installReady && (
+              <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-[11px] leading-relaxed text-amber-100">
+                O Chrome libera a instalação quando o site atende aos critérios e já houve algum uso da página. Assim que estiver pronto, o botão acima muda automaticamente para “Instalar App”.
+              </div>
             )}
             {installMessage && (
               <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-[11px] leading-relaxed text-amber-100">
