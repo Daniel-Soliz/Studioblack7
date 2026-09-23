@@ -15,7 +15,9 @@ interface BeforeInstallPromptEvent extends Event {
 export const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(
+    () => (window.__sb7InstallPrompt as BeforeInstallPromptEvent | undefined) ?? null
+  );
   const [isAppInstalled, setIsAppInstalled] = useState(false);
   const [installMessage, setInstallMessage] = useState('');
   const { totalItems } = useCart();
@@ -35,22 +37,42 @@ export const Header: React.FC = () => {
 
     const handleBeforeInstall = (event: Event) => {
       event.preventDefault();
-      setDeferredInstallPrompt(event as BeforeInstallPromptEvent);
+      const installEvent = event as BeforeInstallPromptEvent;
+      window.__sb7InstallPrompt = installEvent;
+      setDeferredInstallPrompt(installEvent);
+      setInstallMessage('');
+    };
+
+    const syncEarlyInstallPrompt = () => {
+      const installEvent = window.__sb7InstallPrompt as BeforeInstallPromptEvent | undefined;
+      if (installEvent) {
+        setDeferredInstallPrompt(installEvent);
+        setInstallMessage('');
+      }
     };
 
     const handleInstalled = () => {
       setIsAppInstalled(true);
       setDeferredInstallPrompt(null);
+      window.__sb7InstallPrompt = undefined;
+      setInstallMessage('Studio Black7 instalado com sucesso.');
     };
 
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('sb7-install-ready', syncEarlyInstallPrompt);
     window.addEventListener('appinstalled', handleInstalled);
+    window.addEventListener('sb7-app-installed', handleInstalled);
+
+    // Synchronize immediately in case the event fired before Header mounted.
+    syncEarlyInstallPrompt();
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('sb7-install-ready', syncEarlyInstallPrompt);
       window.removeEventListener('appinstalled', handleInstalled);
+      window.removeEventListener('sb7-app-installed', handleInstalled);
     };
   }, []);
 
@@ -68,10 +90,15 @@ export const Header: React.FC = () => {
       return;
     }
 
-    if (deferredInstallPrompt) {
+    const installPrompt =
+      deferredInstallPrompt ||
+      (window.__sb7InstallPrompt as BeforeInstallPromptEvent | undefined) ||
+      null;
+
+    if (installPrompt) {
       try {
-        await deferredInstallPrompt.prompt();
-        const choice = await deferredInstallPrompt.userChoice;
+        await installPrompt.prompt();
+        const choice = await installPrompt.userChoice;
 
         if (choice.outcome === 'accepted') {
           setInstallMessage('Instalação iniciada. O Studio Black7 será adicionado ao seu aparelho.');
@@ -80,6 +107,7 @@ export const Header: React.FC = () => {
         }
 
         setDeferredInstallPrompt(null);
+        window.__sb7InstallPrompt = undefined;
       } catch {
         setInstallMessage('Não foi possível abrir a instalação automática neste navegador.');
       }
