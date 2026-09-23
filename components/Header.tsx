@@ -17,6 +17,7 @@ export const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isAppInstalled, setIsAppInstalled] = useState(false);
+  const [installMessage, setInstallMessage] = useState('');
   const { totalItems } = useCart();
   const { settings } = useStore();
   const location = useLocation();
@@ -55,24 +56,51 @@ export const Header: React.FC = () => {
 
   const handleInstallApp = async () => {
     setMobileMenuOpen(false);
+    setInstallMessage('');
+
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+    if (standalone) {
+      setIsAppInstalled(true);
+      setInstallMessage('O Studio Black7 já está instalado neste aparelho.');
+      return;
+    }
 
     if (deferredInstallPrompt) {
-      await deferredInstallPrompt.prompt();
-      const choice = await deferredInstallPrompt.userChoice;
-      if (choice.outcome === 'accepted') {
-        setIsAppInstalled(true);
+      try {
+        await deferredInstallPrompt.prompt();
+        const choice = await deferredInstallPrompt.userChoice;
+
+        if (choice.outcome === 'accepted') {
+          setInstallMessage('Instalação iniciada. O Studio Black7 será adicionado ao seu aparelho.');
+        } else {
+          setInstallMessage('Instalação cancelada. Você pode tentar novamente quando quiser.');
+        }
+
+        setDeferredInstallPrompt(null);
+      } catch {
+        setInstallMessage('Não foi possível abrir a instalação automática neste navegador.');
       }
-      setDeferredInstallPrompt(null);
       return;
     }
 
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const ua = navigator.userAgent.toLowerCase();
+    const isIOS = /iphone|ipad|ipod/.test(ua);
+    const isAndroid = /android/.test(ua);
+
     if (isIOS) {
-      window.alert('Para instalar o Studio Black7 no iPhone: toque em Compartilhar e depois em “Adicionar à Tela de Início”.');
+      setInstallMessage('No iPhone: toque em Compartilhar e depois em “Adicionar à Tela de Início”. O iOS não permite instalação silenciosa pelo site.');
       return;
     }
 
-    window.alert('No navegador do celular, abra o menu e escolha “Instalar app” ou “Adicionar à tela inicial”.');
+    if (isAndroid) {
+      setInstallMessage('A instalação automática ainda não foi liberada pelo navegador. Abra esta página no Google Chrome e toque novamente em “Instalar App”.');
+      return;
+    }
+
+    setInstallMessage('Abra esta página no Google Chrome ou Edge e toque novamente em “Instalar App”.');
   };
 
   const navLinks = [
@@ -232,11 +260,16 @@ export const Header: React.FC = () => {
               <button
                 type="button"
                 onClick={() => void handleInstallApp()}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-zinc-900 border border-amber-400/30 text-amber-300 font-black text-xs uppercase tracking-wider"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20"
               >
                 <Download className="w-4 h-4" />
-                <span>Instalar Studio Black7</span>
+                <span>Instalar App</span>
               </button>
+            )}
+            {installMessage && (
+              <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-[11px] leading-relaxed text-amber-100">
+                {installMessage}
+              </div>
             )}
 
             <Link
