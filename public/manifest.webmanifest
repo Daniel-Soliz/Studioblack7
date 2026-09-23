@@ -1,0 +1,21 @@
+{
+  "name": "Studio Black7",
+  "short_name": "Black7",
+  "description": "Studio Black7 — serviços, loja, contato e painel da barbearia.",
+  "start_url": "/Studioblack7/",
+  "scope": "/Studioblack7/",
+  "display": "standalone",
+  "background_color": "#08080a",
+  "theme_color": "#08080a",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "categories": ["business", "shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "/Studioblack7/images/ray_logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
