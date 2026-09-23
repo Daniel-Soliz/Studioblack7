@@ -247,26 +247,15 @@ const INITIAL_PRODUCTS: Product[] = [
 ];
 
 export const INITIAL_SERVICES: ServiceItem[] = [
-  // CORTES
-  { id: 'corte', name: 'Corte', price: 'R$ 50,00', priceNumber: 50, category: 'Cortes', description: 'Corte personalizado com acabamento e alinhamento preciso.', popular: true, status: 'active', order: 1 },
-  { id: 'corte-sobrancelha', name: 'Corte + Sobrancelha', price: 'R$ 35,00', priceNumber: 35, category: 'Cortes', description: 'Alinhamento completo do corte e desenho limpo das sobrancelhas.', status: 'active', order: 2 },
-  { id: 'corte-penteado', name: 'Corte + Penteado', price: 'R$ 40,00', priceNumber: 40, category: 'Cortes', description: 'Corte completo com estilização profissional e fixação de bancada.', status: 'active', order: 3 },
-  { id: 'corte-relaxamento', name: 'Corte + Relaxamento', price: 'R$ 45,00', priceNumber: 45, category: 'Cortes', description: 'Controle de volume e textura capilar alinhado ao corte com acabamento.', status: 'active', order: 5 },
-  { id: 'corte-barba', name: 'Corte + Barba', price: 'R$ 80,00', priceNumber: 80, category: 'Cortes', description: 'O combo clássico: corte de precisão e barba alinhada com toalha e navalha.', popular: true, status: 'active', order: 6 },
-  { id: 'corte-barba-penteado', name: 'Corte + Barba + Penteado', price: 'R$ 60,00', priceNumber: 60, category: 'Cortes', description: 'Visual renovado dos fios à barba com finalização e penteado impecável.', status: 'active', order: 7 },
-  { id: 'corte-progressiva', name: 'Corte + Progressiva', price: 'R$ 95,00', priceNumber: 95, category: 'Cortes', description: 'Alinhamento total e corte para cabelos com brilho e caimento suave.', status: 'active', order: 8 },
-  // BARBA
-  { id: 'barba', name: 'Barba', price: 'R$ 35,00', priceNumber: 35, category: 'Barba', description: 'Modelagem, desenho com navalha e hidratação da barba.', popular: true, status: 'active', order: 9 },
-  { id: 'barba-penteado-pezinho', name: 'Barba + Penteado + Pezinho', price: 'R$ 45,00', priceNumber: 45, category: 'Barba', description: 'Barba alinhada, pezinho do cabelo demarcado com perfeição e penteado.', status: 'active', order: 10 },
-  // PENTEADO / ACABAMENTO
-  { id: 'penteado-pezinho', name: 'Penteado + Pezinho', price: 'R$ 25,00', priceNumber: 25, category: 'Penteado / Acabamento', description: 'Acabamento nítido nos contornos do cabelo e modelagem dos fios.', status: 'active', order: 11 },
-  { id: 'dedo-liso', name: 'Dedo Liso', price: 'R$ 15,00', priceNumber: 15, category: 'Penteado / Acabamento', description: 'Técnica de alinhamento e texturização tradicional para fios definidos.', status: 'active', order: 12 },
-  // QUÍMICA / ALISAMENTO
-  { id: 'relaxamento', name: 'Relaxamento', price: 'R$ 20,00', priceNumber: 20, category: 'Química / Alisamento', description: 'Suavização da textura dos fios para maior maleabilidade no dia a dia.', status: 'active', order: 13 },
-  { id: 'progressiva', name: 'Progressiva', price: 'R$ 120,00', priceNumber: 120, category: 'Química / Alisamento', description: 'Tratamento de alinhamento térmico prolongado com brilho e maleabilidade.', status: 'active', order: 14 },
-  // COLORAÇÃO
-  { id: 'luzes', name: 'Luzes', price: 'R$ 110,00', priceNumber: 110, category: 'Coloração', description: 'Técnica de mechas e pontos de iluminação para destacar o corte.', status: 'active', order: 15 },
-  { id: 'nevou', name: 'Nevou', price: 'R$ 160,00', priceNumber: 160, category: 'Coloração', description: 'Descoloração global com platinado de alta pureza e tonalização precisa.', popular: true, status: 'active', order: 16 },
+  { id: 'corte', name: 'Corte', price: 'R$ 50,00', priceNumber: 50, category: 'Cortes', description: 'Corte masculino com acabamento e alinhamento preciso.', popular: true, status: 'active', order: 1 },
+  { id: 'barba', name: 'Barba', price: 'R$ 35,00', priceNumber: 35, category: 'Barba', description: 'Modelagem e alinhamento de barba com acabamento profissional.', popular: true, status: 'active', order: 2 },
+  { id: 'corte-barba', name: 'Corte + Barba', price: 'R$ 80,00', priceNumber: 80, category: 'Cortes', description: 'Combo completo com corte e barba.', popular: true, status: 'active', order: 3 },
+  { id: 'sobrancelha', name: 'Sobrancelha', price: 'R$ 10,00', priceNumber: 10, category: 'Penteado / Acabamento', description: 'Alinhamento e acabamento de sobrancelha.', status: 'active', order: 4 },
+  { id: 'pigmentacao', name: 'Pigmentação', price: 'R$ 25,00', priceNumber: 25, category: 'Coloração', description: 'Pigmentação para realçar e uniformizar o visual.', status: 'active', order: 5 },
+  { id: 'penteado', name: 'Penteado', price: 'R$ 25,00', priceNumber: 25, category: 'Penteado / Acabamento', description: 'Modelagem e finalização profissional dos fios.', status: 'active', order: 6 },
+  { id: 'progressiva', name: 'Progressiva', price: 'R$ 120,00', priceNumber: 120, category: 'Química / Alisamento', description: 'Tratamento de alinhamento térmico com acabamento refinado.', status: 'active', order: 7 },
+  { id: 'luzes', name: 'Luzes', price: 'R$ 110,00', priceNumber: 110, category: 'Coloração', description: 'Mechas e pontos de iluminação para destacar o corte.', status: 'active', order: 8 },
+  { id: 'nevou', name: 'Nevou', price: 'R$ 160,00', priceNumber: 160, category: 'Coloração', description: 'Platinado total com tonalização fria e acabamento de alto impacto.', popular: true, status: 'active', order: 9 },
 ];
 
 export const INITIAL_GALLERY: GalleryItem[] = [
