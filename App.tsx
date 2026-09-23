@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, StoreProvider, CartProvider } from './context';
-import { InstallAppModal } from './components/InstallAppModal';
 
 // Public Pages
 import {
@@ -53,7 +52,6 @@ export default function App() {
         <CartProvider>
           <BrowserRouter basename={import.meta.env.BASE_URL}>
             <ScrollToTop />
-            <InstallAppModal />
             <Routes>
               {/* Public Website Routes */}
               <Route path="/" element={<HomePage />} />
