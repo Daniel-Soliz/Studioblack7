@@ -1,13 +1,29 @@
 import React, { useState } from 'react';
 import { MapPin, Clock, ExternalLink, Copy, Check, Navigation, AlertCircle } from 'lucide-react';
-import { ADDRESS, BUSINESS_HOURS, isCurrentlyOpen } from '../data/barbershop';
+import { isCurrentlyOpen } from '../data/barbershop';
+import { useStore } from '../context/StoreContext';
 
 export const LocationAndHoursSection: React.FC = () => {
   const [copied, setCopied] = useState(false);
-  const status = isCurrentlyOpen();
+  const { settings } = useStore();
+
+  const addressStreet = settings.addressStreet || 'R. Boa Vista';
+  const addressNeighborhood = settings.addressNeighborhood || 'Jardim Paulistano';
+  const addressCity = settings.addressCity || 'São Paulo';
+  const addressState = settings.addressState || 'SP';
+  const addressFull = settings.address || `${addressStreet} — ${addressNeighborhood} — Zona Norte, ${addressCity}/${addressState}`;
+  const mapsUrl = settings.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressFull)}`;
+  const mapEmbedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(addressFull)}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
+  const usesDefaultHours =
+    (settings.businessHoursWeekdays || '').includes('09h00') &&
+    (settings.businessHoursSaturday || '').includes('09h00');
+  const liveStatus = isCurrentlyOpen();
+  const status = usesDefaultHours
+    ? liveStatus
+    : { isOpen: true, message: settings.statusNote || 'Consulte os horários atualizados abaixo' };
 
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText(ADDRESS.full);
+    navigator.clipboard.writeText(addressFull);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -43,7 +59,7 @@ export const LocationAndHoursSection: React.FC = () => {
                     Endereço Oficial
                   </h3>
                   <p className="text-xs text-amber-400 font-semibold uppercase tracking-wider">
-                    {ADDRESS.zone} · {ADDRESS.city}/{ADDRESS.state}
+                    Zona Norte · {addressCity}/{addressState}
                   </p>
                 </div>
               </div>
@@ -51,20 +67,20 @@ export const LocationAndHoursSection: React.FC = () => {
               {/* Address Highlight */}
               <div className="p-4 rounded-xl bg-black/60 border border-zinc-800 space-y-1">
                 <p className="text-base font-bold text-white">
-                  {ADDRESS.street}
+                  {addressStreet}
                 </p>
                 <p className="text-sm text-zinc-300">
-                  {ADDRESS.neighborhood}
+                  {addressNeighborhood}
                 </p>
                 <p className="text-xs text-zinc-400">
-                  {ADDRESS.zone} — São Paulo/SP
+                  Zona Norte — {addressCity}/{addressState}
                 </p>
               </div>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <a
-                  href={ADDRESS.googleMapsUrl}
+                  href={mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-zinc-950 font-bold text-xs uppercase tracking-wider shadow-md hover:brightness-105 transition-all"
@@ -97,13 +113,13 @@ export const LocationAndHoursSection: React.FC = () => {
             <div className="relative aspect-[16/9] sm:aspect-[21/9] rounded-xl overflow-hidden bg-zinc-950 border border-zinc-800 mt-4 group">
               <iframe
                 title="Localização do Studio Black7 no Google Maps"
-                src="https://maps.google.com/maps?q=R.+Boa+Vista+-+Jardim+Paulistano,+S%C3%A3o+Paulo+-+SP&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                src={mapEmbedUrl}
                 className="w-full h-full border-0 grayscale contrast-125 opacity-70 group-hover:opacity-100 transition-opacity duration-300"
                 loading="lazy"
               />
               <div className="absolute top-3 left-3 px-3 py-1 rounded-md bg-black/85 backdrop-blur-md border border-amber-400/30 text-[11px] font-bold text-amber-300 flex items-center gap-1.5 pointer-events-none">
                 <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                <span>R. Boa Vista · Jardim Paulistano</span>
+                <span>{addressStreet} · {addressNeighborhood}</span>
               </div>
             </div>
           </div>
@@ -146,8 +162,9 @@ export const LocationAndHoursSection: React.FC = () => {
                     <p className="text-[11px] text-zinc-400">Dias úteis</p>
                   </div>
                   <div className="text-left sm:text-right">
-                    <p className="text-sm font-bold text-amber-400 font-mono">09h00–12h00</p>
-                    <p className="text-sm font-bold text-amber-400 font-mono">13h30–21h00</p>
+                    <p className="text-sm font-bold text-amber-400 font-mono">
+                      {settings.businessHoursWeekdays || '09h00–12h00 e 13h30–21h00'}
+                    </p>
                   </div>
                 </div>
 
@@ -160,8 +177,9 @@ export const LocationAndHoursSection: React.FC = () => {
                     <p className="text-[11px] text-zinc-400">Final de semana</p>
                   </div>
                   <div className="text-left sm:text-right">
-                    <p className="text-sm font-bold text-amber-400 font-mono">09h00–12h00</p>
-                    <p className="text-sm font-bold text-amber-400 font-mono">13h30–21h00</p>
+                    <p className="text-sm font-bold text-amber-400 font-mono">
+                      {settings.businessHoursSaturday || '09h00–12h00 e 13h30–21h00'}
+                    </p>
                   </div>
                 </div>
 
@@ -174,7 +192,7 @@ export const LocationAndHoursSection: React.FC = () => {
                     <p className="text-[11px] text-zinc-400">Descanso da bancada</p>
                   </div>
                   <span className="px-3 py-1 rounded-md bg-zinc-800/80 text-zinc-400 text-xs font-bold uppercase tracking-wider border border-zinc-700">
-                    {BUSINESS_HOURS.sunday}
+                    {settings.businessHoursSunday || 'Fechado'}
                   </span>
                 </div>
               </div>
