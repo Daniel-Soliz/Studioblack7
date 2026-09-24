@@ -1,24 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, MessageCircle, ShoppingBag, Shield, Download } from 'lucide-react';
+import { Menu, X, MessageCircle, ShoppingBag, Shield } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useStore } from '../context/StoreContext';
 import { STUDIO_BLACK_LOGO } from '../assets/images';
 import { getAssetUrl } from '../utils';
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
-}
-
 export const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(
-    () => (window.__sb7InstallPrompt as BeforeInstallPromptEvent | undefined) ?? null
-  );
-  const [isAppInstalled, setIsAppInstalled] = useState(false);
-  const [installMessage, setInstallMessage] = useState('');
   const { totalItems } = useCart();
   const { settings } = useStore();
   const location = useLocation();
@@ -28,125 +18,20 @@ export const Header: React.FC = () => {
   const whatsappUrl = `https://wa.me/${whatsappRaw}?text=${encodeURIComponent(
     'Olá! Vim pelo site do Studio Black7 e gostaria de consultar os horários disponíveis.'
   )}`;
-  const apkUrl = `${import.meta.env.BASE_URL}downloads/StudioBlack7.apk`;
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
 
-    const standalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-    setIsAppInstalled(standalone);
-
-    const handleBeforeInstall = (event: Event) => {
-      event.preventDefault();
-      const installEvent = event as BeforeInstallPromptEvent;
-      window.__sb7InstallPrompt = installEvent;
-      setDeferredInstallPrompt(installEvent);
-      setInstallMessage('');
-    };
-
-    const syncEarlyInstallPrompt = () => {
-      const installEvent = window.__sb7InstallPrompt as BeforeInstallPromptEvent | undefined;
-      if (installEvent) {
-        setDeferredInstallPrompt(installEvent);
-        setInstallMessage('');
-      }
-    };
-
-    const handleInstalled = () => {
-      setIsAppInstalled(true);
-      setDeferredInstallPrompt(null);
-      window.__sb7InstallPrompt = undefined;
-      setInstallMessage('Studio Black7 instalado com sucesso.');
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-    window.addEventListener('sb7-install-ready', syncEarlyInstallPrompt);
-    window.addEventListener('appinstalled', handleInstalled);
-    window.addEventListener('sb7-app-installed', handleInstalled);
 
     // Synchronize immediately in case the event fired before Header mounted.
     syncEarlyInstallPrompt();
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
-      window.removeEventListener('sb7-install-ready', syncEarlyInstallPrompt);
-      window.removeEventListener('appinstalled', handleInstalled);
-      window.removeEventListener('sb7-app-installed', handleInstalled);
     };
   }, []);
-
-  const handleInstallApp = async () => {
-    setInstallMessage('');
-
-    const standalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-
-    if (standalone) {
-      setIsAppInstalled(true);
-      setInstallMessage('O Studio Black7 já está instalado neste aparelho.');
-      return;
-    }
-
-    if ('serviceWorker' in navigator) {
-      try {
-        await Promise.race([
-          navigator.serviceWorker.ready,
-          new Promise((resolve) => window.setTimeout(resolve, 1500)),
-        ]);
-        await new Promise((resolve) => window.setTimeout(resolve, 250));
-      } catch {
-        // A instalação manual continua disponível mesmo se o service worker demorar.
-      }
-    }
-
-    const installPrompt =
-      deferredInstallPrompt ||
-      (window.__sb7InstallPrompt as BeforeInstallPromptEvent | undefined) ||
-      null;
-
-    if (installPrompt) {
-      try {
-        await installPrompt.prompt();
-        const choice = await installPrompt.userChoice;
-
-        if (choice.outcome === 'accepted') {
-          setInstallMessage('Instalação iniciada. O Studio Black7 será adicionado à tela do seu aparelho.');
-          setMobileMenuOpen(false);
-        } else {
-          setInstallMessage('Instalação cancelada. Você pode tentar novamente quando quiser.');
-        }
-
-        setDeferredInstallPrompt(null);
-        window.__sb7InstallPrompt = undefined;
-      } catch {
-        setInstallMessage('Não foi possível abrir a janela automática. Use a instalação pelo menu do navegador.');
-      }
-      return;
-    }
-
-    const ua = navigator.userAgent.toLowerCase();
-    const isIOS = /iphone|ipad|ipod/.test(ua);
-    const isAndroid = /android/.test(ua);
-
-    if (isIOS) {
-      setInstallMessage('No iPhone: toque em Compartilhar e depois em “Adicionar à Tela de Início”.');
-      return;
-    }
-
-    if (isAndroid) {
-      setInstallMessage('No Chrome: toque nos três pontos (⋮) no canto superior direito → “Instalar app” ou “Adicionar à tela inicial” → confirme em “Instalar”.');
-      return;
-    }
-
-    setInstallMessage('No Chrome ou Edge, abra o menu do navegador e escolha “Instalar Studio Black7” ou “Instalar este site como aplicativo”.');
-  };
 
   const navLinks = [
     { label: 'Início', path: '/' },
@@ -226,18 +111,6 @@ export const Header: React.FC = () => {
 
         {/* Right Actions: Cart, WhatsApp & Admin */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {!isAppInstalled && (
-            <a
-              href={apkUrl}
-              download="StudioBlack7.apk"
-              className="hidden md:inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-amber-400/30 hover:border-amber-400 text-amber-300 hover:text-amber-200 text-xs font-bold transition-all"
-              title="Baixar aplicativo Android Studio Black7"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Baixar App Android</span>
-            </a>
-          )}
-
           {/* Cart Icon with Counter */}
           <Link
             to="/carrinho"
@@ -301,26 +174,6 @@ export const Header: React.FC = () => {
           </nav>
 
           <div className="pt-3 border-t border-zinc-800/80 flex flex-col gap-2.5">
-            {!isAppInstalled && (
-              <a
-                href={apkUrl}
-                download="StudioBlack7.apk"
-                onClick={() => {
-                  setInstallMessage('Download do StudioBlack7.apk iniciado. Quando terminar, abra o arquivo baixado e confirme a instalação do Android.');
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 transition-all"
-              >
-                <Download className="w-4 h-4" />
-                <span>Baixar App Android</span>
-              </a>
-            )}
-            {installMessage && (
-              <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-3 text-[11px] leading-relaxed text-amber-100">
-                <strong className="mb-1 block text-amber-300">Instalação do Studio Black7</strong>
-                {installMessage}
-              </div>
-            )}
-
             <Link
               to="/carrinho"
               onClick={() => setMobileMenuOpen(false)}
