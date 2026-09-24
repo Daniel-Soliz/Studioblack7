@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, StoreProvider, CartProvider } from './context';
+import { AppErrorBoundary } from './components/AppErrorBoundary';
 
 // Public Pages
 import {
@@ -47,7 +48,8 @@ function ScrollToTop() {
 
 export default function App() {
   return (
-    <AuthProvider>
+    <AppErrorBoundary>
+      <AuthProvider>
       <StoreProvider>
         <CartProvider>
           <BrowserRouter basename={import.meta.env.BASE_URL}>
@@ -91,6 +93,7 @@ export default function App() {
           </BrowserRouter>
         </CartProvider>
       </StoreProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </AppErrorBoundary>
   );
 }
