@@ -38,6 +38,7 @@ if ('serviceWorker' in navigator) {
       const swUrl = `${import.meta.env.BASE_URL}sw.js`;
       const registration = await navigator.serviceWorker.register(swUrl, {
         scope: import.meta.env.BASE_URL,
+        updateViaCache: 'none',
       });
       await registration.update();
     } catch (error) {
