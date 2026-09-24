@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, MessageCircle, ShoppingBag, Shield, Download } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useStore } from '../context/StoreContext';
-import { createWhatsAppBookingUrl } from '../data/barbershop';
 import { STUDIO_BLACK_LOGO } from '../assets/images';
 import { getAssetUrl } from '../utils';
 
@@ -20,11 +19,15 @@ export const Header: React.FC = () => {
   );
   const [isAppInstalled, setIsAppInstalled] = useState(false);
   const [installMessage, setInstallMessage] = useState('');
-  const installReady = Boolean(deferredInstallPrompt || window.__sb7InstallPrompt);
   const { totalItems } = useCart();
   const { settings } = useStore();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const whatsappRaw = (settings.whatsappRaw || settings.whatsapp || '').replace(/\D/g, '');
+  const whatsappUrl = `https://wa.me/${whatsappRaw}?text=${encodeURIComponent(
+    'Olá! Vim pelo site do Studio Black7 e gostaria de consultar os horários disponíveis.'
+  )}`;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -78,7 +81,6 @@ export const Header: React.FC = () => {
   }, []);
 
   const handleInstallApp = async () => {
-    setMobileMenuOpen(false);
     setInstallMessage('');
 
     const standalone =
@@ -89,6 +91,18 @@ export const Header: React.FC = () => {
       setIsAppInstalled(true);
       setInstallMessage('O Studio Black7 já está instalado neste aparelho.');
       return;
+    }
+
+    if ('serviceWorker' in navigator) {
+      try {
+        await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((resolve) => window.setTimeout(resolve, 1500)),
+        ]);
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
+      } catch {
+        // A instalação manual continua disponível mesmo se o service worker demorar.
+      }
     }
 
     const installPrompt =
@@ -102,7 +116,8 @@ export const Header: React.FC = () => {
         const choice = await installPrompt.userChoice;
 
         if (choice.outcome === 'accepted') {
-          setInstallMessage('Instalação iniciada. O Studio Black7 será adicionado ao seu aparelho.');
+          setInstallMessage('Instalação iniciada. O Studio Black7 será adicionado à tela do seu aparelho.');
+          setMobileMenuOpen(false);
         } else {
           setInstallMessage('Instalação cancelada. Você pode tentar novamente quando quiser.');
         }
@@ -110,7 +125,7 @@ export const Header: React.FC = () => {
         setDeferredInstallPrompt(null);
         window.__sb7InstallPrompt = undefined;
       } catch {
-        setInstallMessage('Não foi possível abrir a instalação automática neste navegador.');
+        setInstallMessage('Não foi possível abrir a janela automática. Use a instalação pelo menu do navegador.');
       }
       return;
     }
@@ -120,16 +135,16 @@ export const Header: React.FC = () => {
     const isAndroid = /android/.test(ua);
 
     if (isIOS) {
-      setInstallMessage('No iPhone: toque em Compartilhar e depois em “Adicionar à Tela de Início”. O iOS não permite instalação silenciosa pelo site.');
+      setInstallMessage('No iPhone: toque em Compartilhar e depois em “Adicionar à Tela de Início”.');
       return;
     }
 
     if (isAndroid) {
-      setInstallMessage('O Chrome não disponibilizou a instalação nativa para este aparelho neste momento. Quando ele liberar o instalador, este mesmo botão abrirá diretamente a tela oficial de instalação.');
+      setInstallMessage('No Chrome: toque nos três pontos (⋮) no canto superior direito → “Instalar app” ou “Adicionar à tela inicial” → confirme em “Instalar”.');
       return;
     }
 
-    setInstallMessage('Abra esta página no Google Chrome ou Edge e toque novamente em “Instalar App”.');
+    setInstallMessage('No Chrome ou Edge, abra o menu do navegador e escolha “Instalar Studio Black7” ou “Instalar este site como aplicativo”.');
   };
 
   const navLinks = [
@@ -165,7 +180,7 @@ export const Header: React.FC = () => {
           <div className="w-16 h-16 sm:w-[76px] sm:h-[76px] shrink-0 flex items-center justify-center">
             <img
               src={settings.logoUrl && settings.logoUrl !== '/images/ray_logo.png' ? getAssetUrl(settings.logoUrl) : STUDIO_BLACK_LOGO}
-              alt="Studio Black - Raspe Barba & Cia"
+              alt="Studio Black7"
               className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-md"
               onError={(e) => {
                 // Fallback to stylized insignia
@@ -238,7 +253,7 @@ export const Header: React.FC = () => {
 
           {/* WhatsApp Booking CTA */}
           <a
-            href={createWhatsAppBookingUrl()}
+            href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:brightness-105 transition-all"
@@ -296,7 +311,8 @@ export const Header: React.FC = () => {
               </button>
             )}
             {installMessage && (
-              <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-[11px] leading-relaxed text-amber-100">
+              <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-3 text-[11px] leading-relaxed text-amber-100">
+                <strong className="mb-1 block text-amber-300">Instalação do Studio Black7</strong>
                 {installMessage}
               </div>
             )}
@@ -316,13 +332,13 @@ export const Header: React.FC = () => {
             </Link>
 
             <a
-              href={createWhatsAppBookingUrl()}
+              href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20"
             >
               <MessageCircle className="w-4 h-4 fill-zinc-950" />
-              <span>Agendar no WhatsApp (+55 11 98726-7087)</span>
+              <span>Falar no WhatsApp</span>
             </a>
           </div>
         </div>
