@@ -48,7 +48,7 @@ export const ContactSection: React.FC = () => {
                 WhatsApp Oficial
               </h3>
               <p className="text-xs text-zinc-400">
-                Agendamentos, dúvidas e atendimento prioritário.
+                Horários disponíveis, dúvidas e atendimento direto.
               </p>
               <p className="text-sm font-mono font-bold text-amber-400">
                 {settings.whatsapp || settings.phone || '+55 11 98726-7087'}
