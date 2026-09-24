@@ -27,7 +27,7 @@ export const CartPage: React.FC = () => {
   const navigate = useNavigate();
 
   const shippingOptions = [
-    { name: 'Retirada no Studio Black7 (Gratuita)', cost: 0, desc: 'Tv. União, 4 — Jardim Paulistano' },
+    { name: 'Retirada no Studio Black7 (Gratuita)', cost: 0, desc: 'R. Boa Vista — Jardim Paulistano' },
     { name: 'Entrega Expressa Zona Norte', cost: 15.00, desc: 'Entrega motoboy para Zona Norte de SP' },
     { name: 'Envio Padrão São Paulo Capital', cost: 25.00, desc: 'Envio via transportadora/correios' },
   ];
