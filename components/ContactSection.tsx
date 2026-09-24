@@ -1,16 +1,23 @@
 import React from 'react';
 import { MessageCircle, Instagram, MapPin, Phone, ArrowUpRight } from 'lucide-react';
-import { 
-  WHATSAPP_NUMBER, 
-  INSTAGRAM_STUDIO, 
-  INSTAGRAM_RAY, 
-  INSTAGRAM_STUDIO_URL, 
-  INSTAGRAM_RAY_URL, 
-  ADDRESS, 
-  createWhatsAppBookingUrl 
-} from '../data/barbershop';
+import { useStore } from '../context/StoreContext';
 
 export const ContactSection: React.FC = () => {
+  const { settings } = useStore();
+  const whatsappRaw = (settings.whatsappRaw || settings.whatsapp || '').replace(/\D/g, '');
+  const whatsappUrl = `https://wa.me/${whatsappRaw}?text=${encodeURIComponent(
+    'Olá! Vim pelo site do Studio Black7 e gostaria de falar com a equipe.'
+  )}`;
+  const instagramStudio = settings.instagramStudio || '@barber_black7_';
+  const instagramRay = settings.instagramRay || '@rayblakc7';
+  const instagramStudioUrl = `https://instagram.com/${instagramStudio.replace('@', '')}`;
+  const instagramRayUrl = `https://instagram.com/${instagramRay.replace('@', '')}`;
+  const addressStreet = settings.addressStreet || 'R. Boa Vista';
+  const addressNeighborhood = settings.addressNeighborhood || 'Jardim Paulistano';
+  const addressCity = settings.addressCity || 'São Paulo';
+  const addressState = settings.addressState || 'SP';
+  const mapsUrl = settings.mapsUrl || 'https://www.google.com/maps/search/?api=1&query=R.+Boa+Vista+-+Jardim+Paulistano,+S%C3%A3o+Paulo+-+SP';
+
   return (
     <section id="contato" className="py-20 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,12 +51,12 @@ export const ContactSection: React.FC = () => {
                 Agendamentos, dúvidas e atendimento prioritário.
               </p>
               <p className="text-sm font-mono font-bold text-amber-400">
-                {WHATSAPP_NUMBER}
+                {settings.whatsapp || settings.phone || '+55 11 98726-7087'}
               </p>
             </div>
 
             <a
-              href={createWhatsAppBookingUrl()}
+              href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-300 hover:text-zinc-950 text-xs font-bold uppercase tracking-wider transition-all duration-200 border border-emerald-500/30"
@@ -72,12 +79,12 @@ export const ContactSection: React.FC = () => {
                 Acompanhe o perfil oficial do Studio Black7.
               </p>
               <p className="text-sm font-semibold text-amber-400">
-                @{INSTAGRAM_STUDIO}
+                {instagramStudio}
               </p>
             </div>
 
             <a
-              href={INSTAGRAM_STUDIO_URL}
+              href={instagramStudioUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-amber-400 text-zinc-200 hover:text-zinc-950 text-xs font-bold uppercase tracking-wider transition-all duration-200 border border-zinc-700 hover:border-amber-400"
@@ -97,20 +104,20 @@ export const ContactSection: React.FC = () => {
                 Instagram de Ray Black7
               </h3>
               <p className="text-xs text-zinc-400">
-                Perfil do fundador e especialista em pigmentação.
+                Perfil do fundador, com trabalhos, novidades e conteúdos do Studio Black7.
               </p>
               <p className="text-sm font-semibold text-amber-400">
-                @{INSTAGRAM_RAY}
+                {instagramRay}
               </p>
             </div>
 
             <a
-              href={INSTAGRAM_RAY_URL}
+              href={instagramRayUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-amber-400 text-zinc-200 hover:text-zinc-950 text-xs font-bold uppercase tracking-wider transition-all duration-200 border border-zinc-700 hover:border-amber-400"
             >
-              <span>Seguir @{INSTAGRAM_RAY}</span>
+              <span>Seguir {instagramRay}</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
           </div>
@@ -125,15 +132,15 @@ export const ContactSection: React.FC = () => {
                 Endereço
               </h3>
               <p className="text-xs text-zinc-400">
-                {ADDRESS.street} · {ADDRESS.neighborhood}
+                {addressStreet} · {addressNeighborhood}
               </p>
               <p className="text-xs font-semibold text-amber-400">
-                {ADDRESS.zone} · São Paulo/SP
+                Zona Norte · {addressCity}/{addressState}
               </p>
             </div>
 
             <a
-              href={ADDRESS.googleMapsUrl}
+              href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-amber-400 text-zinc-200 hover:text-zinc-950 text-xs font-bold uppercase tracking-wider transition-all duration-200 border border-zinc-700 hover:border-amber-400"
