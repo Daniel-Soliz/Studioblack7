@@ -1,42 +1,48 @@
 {
   "name": "Studio Black7",
   "short_name": "Black7",
-  "description": "Studio Black7 — serviços, loja, contato e painel da barbearia.",
-  "start_url": "/Studioblack7/",
-  "scope": "/Studioblack7/",
+  "description": "Studio Black7 — serviços, loja, contato e atendimento da barbearia.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#08080a",
   "theme_color": "#08080a",
   "orientation": "portrait-primary",
   "lang": "pt-BR",
-  "categories": [
-    "business",
-    "shopping",
-    "lifestyle"
-  ],
+  "prefer_related_applications": false,
+  "categories": ["business", "shopping", "lifestyle"],
   "icons": [
     {
-      "src": "/Studioblack7/icon-192.webp",
+      "src": "./icon-192.png",
       "sizes": "192x192",
-      "type": "image/webp",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/Studioblack7/icon-512.webp",
+      "src": "./icon-512.png",
       "sizes": "512x512",
-      "type": "image/webp",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/Studioblack7/icon-512.webp",
+      "src": "./icon-512.png",
       "sizes": "512x512",
-      "type": "image/webp",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
-  "id": "/Studioblack7/",
-  "display_override": [
-    "standalone",
-    "minimal-ui"
+  "shortcuts": [
+    {
+      "name": "Serviços",
+      "short_name": "Serviços",
+      "url": "./servicos"
+    },
+    {
+      "name": "Loja",
+      "short_name": "Loja",
+      "url": "./loja"
+    }
   ]
 }
