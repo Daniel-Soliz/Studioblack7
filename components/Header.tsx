@@ -28,6 +28,7 @@ export const Header: React.FC = () => {
   const whatsappUrl = `https://wa.me/${whatsappRaw}?text=${encodeURIComponent(
     'Olá! Vim pelo site do Studio Black7 e gostaria de consultar os horários disponíveis.'
   )}`;
+  const apkUrl = `${import.meta.env.BASE_URL}downloads/StudioBlack7.apk`;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -226,15 +227,15 @@ export const Header: React.FC = () => {
         {/* Right Actions: Cart, WhatsApp & Admin */}
         <div className="flex items-center gap-2 sm:gap-3">
           {!isAppInstalled && (
-            <button
-              type="button"
-              onClick={() => void handleInstallApp()}
+            <a
+              href={apkUrl}
+              download="StudioBlack7.apk"
               className="hidden md:inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-amber-400/30 hover:border-amber-400 text-amber-300 hover:text-amber-200 text-xs font-bold transition-all"
-              title="Instalar Studio Black7"
+              title="Baixar aplicativo Android Studio Black7"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Instalar App</span>
-            </button>
+              <span>Baixar App Android</span>
+            </a>
           )}
 
           {/* Cart Icon with Counter */}
@@ -301,14 +302,17 @@ export const Header: React.FC = () => {
 
           <div className="pt-3 border-t border-zinc-800/80 flex flex-col gap-2.5">
             {!isAppInstalled && (
-              <button
-                type="button"
-                onClick={() => void handleInstallApp()}
+              <a
+                href={apkUrl}
+                download="StudioBlack7.apk"
+                onClick={() => {
+                  setInstallMessage('Download do StudioBlack7.apk iniciado. Quando terminar, abra o arquivo baixado e confirme a instalação do Android.');
+                }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 transition-all"
               >
                 <Download className="w-4 h-4" />
-                <span>Instalar App</span>
-              </button>
+                <span>Baixar App Android</span>
+              </a>
             )}
             {installMessage && (
               <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-3 text-[11px] leading-relaxed text-amber-100">
