@@ -91,16 +91,25 @@ export const ServicesSection: React.FC = () => {
               key={service.id}
               className="relative rounded-2xl bg-zinc-900/60 border border-zinc-800/90 hover:border-amber-400/40 hover:bg-zinc-900/90 transition-all duration-300 flex flex-col overflow-hidden group shadow-lg"
             >
-              {service.image && (
-                <div className="aspect-[16/10] overflow-hidden bg-black">
+              <div className="aspect-[16/10] overflow-hidden bg-black">
+                {service.image ? (
                   <img
                     src={service.image}
                     alt={`Exemplo de ${service.name}`}
                     className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
                     loading="lazy"
                   />
-                </div>
-              )}
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-zinc-500">
+                    <div className="w-12 h-12 rounded-2xl border border-amber-400/20 bg-amber-400/10 flex items-center justify-center">
+                      <Scissors className="w-6 h-6 text-amber-400" />
+                    </div>
+                    <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-zinc-500">
+                      Studio Black7
+                    </span>
+                  </div>
+                )}
+              </div>
 
               <div className="p-6 flex flex-col justify-between flex-1">
                 <div className="space-y-3">
@@ -120,11 +129,9 @@ export const ServicesSection: React.FC = () => {
                     <h3 className="font-['Cinzel'] text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
                       {service.name}
                     </h3>
-                    {service.image && (
-                      <p className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">
-                        Imagem de referência do trabalho
-                      </p>
-                    )}
+                    <p className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">
+                      {service.image ? 'Imagem de referência do trabalho' : 'Serviço disponível no Studio Black7'}
+                    </p>
                     {service.description && (
                       <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
                         {service.description}
