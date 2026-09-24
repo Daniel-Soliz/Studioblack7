@@ -1,0 +1,12 @@
+{
+  "appId": "com.studioblack7.app",
+  "appName": "Studio Black7",
+  "webDir": "dist",
+  "server": {
+    "url": "https://daniel-soliz.github.io/Studioblack7/",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
