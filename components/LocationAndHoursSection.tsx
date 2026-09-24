@@ -199,7 +199,7 @@ export const LocationAndHoursSection: React.FC = () => {
             </div>
 
             <div className="pt-2 text-[11px] text-zinc-400 text-center">
-              Recomendamos agendamento prévio pelo WhatsApp para garantir seu horário sem filas.
+              Consulte a disponibilidade pelo WhatsApp antes de ir ao Studio Black7.
             </div>
           </div>
 
