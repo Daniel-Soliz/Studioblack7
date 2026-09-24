@@ -20,10 +20,10 @@ export const AdminHoursPage: React.FC = () => {
     settings.businessHoursSaturday || '09h00–12h00 e 13h30–21h00'
   );
   const [businessHoursSunday, setBusinessHoursSunday] = useState(
-    settings.businessHoursSunday || 'Fechado (Sob agendamento VIP)'
+    settings.businessHoursSunday || 'Fechado'
   );
   const [statusNote, setStatusNote] = useState(
-    settings.statusNote || 'Segunda a Sábado com agendamento prioritário'
+    settings.statusNote || 'Segunda a Sábado — consulte disponibilidade pelo WhatsApp'
   );
 
   const handleSave = (e: React.FormEvent) => {
@@ -51,7 +51,7 @@ export const AdminHoursPage: React.FC = () => {
               Escala &amp; Horários de Atendimento
             </h1>
             <p className="text-xs text-zinc-400">
-              Configure a grade de horários de Segunda a Domingo exibida para agendamento.
+              Configure os horários de funcionamento exibidos para os clientes no site.
             </p>
           </div>
 
@@ -117,7 +117,7 @@ export const AdminHoursPage: React.FC = () => {
                   type="text"
                   value={businessHoursSunday}
                   onChange={(e) => setBusinessHoursSunday(e.target.value)}
-                  placeholder="Fechado (Sob agendamento VIP)"
+                  placeholder="Fechado"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-zinc-750 text-xs text-white focus:border-amber-400 focus:outline-none"
                 />
               </div>
@@ -130,7 +130,7 @@ export const AdminHoursPage: React.FC = () => {
                   type="text"
                   value={statusNote}
                   onChange={(e) => setStatusNote(e.target.value)}
-                  placeholder="Segunda a Sábado com agendamento prioritário"
+                  placeholder="Segunda a Sábado — consulte disponibilidade pelo WhatsApp"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-zinc-750 text-xs text-white focus:border-amber-400 focus:outline-none"
                 />
               </div>
