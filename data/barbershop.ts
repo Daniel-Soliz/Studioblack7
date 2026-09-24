@@ -120,14 +120,6 @@ export const SERVICES: ServiceItem[] = [
     description: 'Alinhamento e acabamento de sobrancelha.',
   },
   {
-    id: 'pigmentacao',
-    name: 'Pigmentação',
-    price: 'R$ 25,00',
-    priceNumber: 25,
-    category: 'Coloração',
-    description: 'Pigmentação para realçar e uniformizar o visual.',
-  },
-  {
     id: 'penteado',
     name: 'Penteado',
     price: 'R$ 25,00',
