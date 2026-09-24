@@ -140,7 +140,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Copyright & Signature */}
         <div className="pt-8 border-t border-zinc-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left text-[11px] text-zinc-400">
           <p>
-            &copy; 2026 {BRAND_NAME} — Rayblack7. Todos os direitos reservados.
+            &copy; 2026 {brandName} — Rayblack7. Todos os direitos reservados.
           </p>
           <p className="flex items-center justify-center gap-1">
             <span>Feito com elegância na Zona Norte de SP.</span>
