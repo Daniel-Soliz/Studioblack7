@@ -223,7 +223,7 @@ export const Header: React.FC = () => {
           })}
         </nav>
 
-        {/* Right Actions: Cart, Agendar & Admin */}
+        {/* Right Actions: Cart, WhatsApp & Admin */}
         <div className="flex items-center gap-2 sm:gap-3">
           {!isAppInstalled && (
             <button
@@ -259,7 +259,7 @@ export const Header: React.FC = () => {
             className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:brightness-105 transition-all"
           >
             <MessageCircle className="w-3.5 h-3.5 fill-zinc-950" />
-            <span>Agendar</span>
+            <span>WhatsApp</span>
           </a>
 
           {/* Subtle Admin Access link */}
