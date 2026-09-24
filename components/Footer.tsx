@@ -1,39 +1,28 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Instagram, MessageCircle, MapPin, Clock, Scissors, Heart } from 'lucide-react';
-import { 
-  BRAND_NAME, 
-  INSTAGRAM_STUDIO, 
-  INSTAGRAM_RAY, 
-  INSTAGRAM_STUDIO_URL, 
-  INSTAGRAM_RAY_URL, 
-  ADDRESS, 
-  BUSINESS_HOURS, 
-  createWhatsAppBookingUrl 
-} from '../data/barbershop';
+import { useStore } from '../context/StoreContext';
 
 export const Footer: React.FC = () => {
-  const navLinks = [
-    { label: 'Início', href: '#inicio' },
-    { label: 'Sobre', href: '#sobre' },
-    { label: 'Serviços', href: '#servicos' },
-    { label: 'Localização', href: '#localizacao' },
-    { label: 'Contato', href: '#contato' },
-    { label: 'Agendar', href: '#agendamento' },
-  ];
+  const { settings } = useStore();
+  const brandName = settings.companyName || 'STUDIO BLACK7';
+  const whatsappRaw = (settings.whatsappRaw || settings.whatsapp || '').replace(/\D/g, '');
+  const whatsappUrl = `https://wa.me/${whatsappRaw}?text=${encodeURIComponent(
+    'Olá! Vim pelo site do Studio Black7 e gostaria de falar com a equipe.'
+  )}`;
+  const instagramStudio = settings.instagramStudio || '@barber_black7_';
+  const instagramRay = settings.instagramRay || '@rayblakc7';
+  const instagramStudioUrl = `https://instagram.com/${instagramStudio.replace('@', '')}`;
+  const instagramRayUrl = `https://instagram.com/${instagramRay.replace('@', '')}`;
 
-  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    const element = document.querySelector(href);
-    if (element) {
-      const headerOffset = 80;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-    }
-  };
+  const navLinks = [
+    { label: 'Início', path: '/' },
+    { label: 'Sobre', path: '/sobre' },
+    { label: 'Serviços', path: '/servicos' },
+    { label: 'Loja', path: '/loja' },
+    { label: 'Localização', path: '/localizacao' },
+    { label: 'Contato', path: '/contato' },
+  ];
 
   return (
     <footer className="bg-[#050507] border-t border-zinc-850 pt-16 pb-12 text-zinc-400 text-xs">
@@ -49,7 +38,7 @@ export const Footer: React.FC = () => {
                 <span className="font-['Cinzel'] font-black text-base text-amber-400">7</span>
               </div>
               <span className="font-['Cinzel'] font-black text-lg tracking-widest text-white">
-                {BRAND_NAME}
+                {brandName}
               </span>
             </div>
 
@@ -60,7 +49,7 @@ export const Footer: React.FC = () => {
             {/* Social Links */}
             <div className="flex items-center gap-3 pt-2">
               <a
-                href={INSTAGRAM_STUDIO_URL}
+                href={instagramStudioUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 hover:text-amber-400 hover:border-amber-400/40 transition-colors"
@@ -70,7 +59,7 @@ export const Footer: React.FC = () => {
               </a>
 
               <a
-                href={INSTAGRAM_RAY_URL}
+                href={instagramRayUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 hover:text-amber-400 hover:border-amber-400/40 transition-colors"
@@ -80,7 +69,7 @@ export const Footer: React.FC = () => {
               </a>
 
               <a
-                href={createWhatsAppBookingUrl()}
+                href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 hover:text-emerald-400 hover:border-emerald-400/40 transition-colors"
@@ -99,13 +88,13 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2">
               {navLinks.map((link) => (
                 <li key={link.label}>
-                  <a
-                    href={link.href}
-                    onClick={(e) => handleLinkClick(e, link.href)}
+                  <Link
+                    to={link.path}
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'auto' })}
                     className="hover:text-amber-400 transition-colors text-xs inline-block"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -120,28 +109,28 @@ export const Footer: React.FC = () => {
             <div className="space-y-2.5">
               <div className="flex items-start gap-2 text-zinc-300">
                 <MapPin className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <span>{ADDRESS.street}, {ADDRESS.neighborhood}, {ADDRESS.zone} — São Paulo/SP</span>
+                <span>{settings.address || 'R. Boa Vista — Jardim Paulistano — Zona Norte, São Paulo/SP'}</span>
               </div>
 
               <div className="flex items-start gap-2 text-zinc-300">
                 <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <div>
-                  <p>Seg–Sex: 09h–12h / 13h30–21h</p>
-                  <p>Sáb: 09h–12h / 13h30–21h</p>
-                  <p className="text-zinc-500">Dom: Fechado</p>
+                  <p>Seg–Sex: {settings.businessHoursWeekdays || '09h00–12h00 e 13h30–21h00'}</p>
+                  <p>Sáb: {settings.businessHoursSaturday || '09h00–12h00 e 13h30–21h00'}</p>
+                  <p className="text-zinc-500">Dom: {settings.businessHoursSunday || 'Fechado'}</p>
                 </div>
               </div>
             </div>
 
             <div className="pt-2">
               <a
-                href={createWhatsAppBookingUrl()}
+                href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors"
               >
                 <MessageCircle className="w-3.5 h-3.5" />
-                <span>Agendar horário no WhatsApp ›</span>
+                <span>Falar com o Studio Black7 no WhatsApp ›</span>
               </a>
             </div>
           </div>
