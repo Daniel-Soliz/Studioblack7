@@ -1,0 +1,73 @@
+name: Build Studio Black7 APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "capacitor.config.json"
+      - ".github/workflows/build-apk.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install web dependencies
+        run: npm install
+
+      - name: Build website
+        run: npm run build
+
+      - name: Install Capacitor Android tools
+        run: npm install --no-save @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Create Android project
+        run: npx cap add android
+
+      - name: Sync Android project
+        run: npx cap sync android
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Build installable APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Prepare APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk StudioBlack7.apk
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: StudioBlack7-APK
+          path: StudioBlack7.apk
+          if-no-files-found: error
+
+      - name: Publish stable APK download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view android-latest >/dev/null 2>&1; then
+            gh release upload android-latest StudioBlack7.apk --clobber
+          else
+            gh release create android-latest StudioBlack7.apk               --title "Studio Black7 - Aplicativo Android"               --notes "APK Android do Studio Black7. O aplicativo abre o site oficial integrado e recebe as atualizações publicadas no site."
+          fi
