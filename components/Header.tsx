@@ -24,9 +24,8 @@ export const Header: React.FC = () => {
       setIsScrolled(window.scrollY > 20);
     };
 
-
-    // Synchronize immediately in case the event fired before Header mounted.
-    syncEarlyInstallPrompt();
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
