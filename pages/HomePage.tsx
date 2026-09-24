@@ -22,7 +22,7 @@ export const HomePage: React.FC = () => {
                   Seu estilo começa aqui.
                 </h1>
                 <p className="mt-4 text-sm sm:text-base text-zinc-400 leading-relaxed max-w-xl">
-                  Escolha como quer entrar no Studio Black7. Sem enrolação: atendimento da barbearia ou loja de produtos.
+                  Escolha entre os serviços da barbearia e a loja de produtos Studio Black7.
                 </p>
               </div>
 
