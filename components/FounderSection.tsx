@@ -1,7 +1,6 @@
 import React from 'react';
 import { Instagram, Award, Sparkles, CheckCircle2, MessageCircle } from 'lucide-react';
 import { BARBER_PORTRAIT_IMG } from '../assets/images';
-import { createWhatsAppBookingUrl } from '../data/barbershop';
 import { useStore } from '../context/StoreContext';
 import { getAssetUrl } from '../utils';
 
@@ -11,6 +10,10 @@ export const FounderSection: React.FC = () => {
   const founderImage = content.founderImageUrl || settings.founderImageUrl || BARBER_PORTRAIT_IMG;
   const instagramHandle = settings.instagramRay || '@rayblakc7';
   const instagramUrl = `https://instagram.com/${instagramHandle.replace('@', '')}`;
+  const whatsappRaw = (settings.whatsappRaw || settings.whatsapp || '').replace(/\D/g, '');
+  const whatsappUrl = `https://wa.me/${whatsappRaw}?text=${encodeURIComponent(
+    'Olá! Vim pelo site do Studio Black7 e gostaria de consultar um horário para corte.'
+  )}`;
 
   return (
     <section className="py-20 relative overflow-hidden">
@@ -108,13 +111,13 @@ export const FounderSection: React.FC = () => {
             {/* Social & Booking Actions */}
             <div className="pt-2 flex flex-wrap items-center gap-4">
               <a
-                href={createWhatsAppBookingUrl('Corte')}
+                href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-zinc-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:brightness-105 transition-all"
               >
                 <MessageCircle className="w-4 h-4 fill-zinc-950" />
-                <span>Agendar com Ray Black7</span>
+                <span>Consultar horário com Ray Black7</span>
               </a>
 
               <a
