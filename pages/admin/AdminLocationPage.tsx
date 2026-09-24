@@ -14,7 +14,7 @@ export const AdminLocationPage: React.FC = () => {
   const { settings, saveSettings } = useStore();
   const [feedback, setFeedback] = useState('');
 
-  const [addressStreet, setAddressStreet] = useState(settings.addressStreet || 'Tv. União, 4');
+  const [addressStreet, setAddressStreet] = useState(settings.addressStreet || 'R. Boa Vista');
   const [addressNeighborhood, setAddressNeighborhood] = useState(settings.addressNeighborhood || 'Jardim Paulistano');
   const [addressCity, setAddressCity] = useState(settings.addressCity || 'São Paulo');
   const [addressState, setAddressState] = useState(settings.addressState || 'SP');
@@ -106,7 +106,7 @@ export const AdminLocationPage: React.FC = () => {
                   type="text"
                   value={addressStreet}
                   onChange={(e) => setAddressStreet(e.target.value)}
-                  placeholder="Tv. União, 4"
+                  placeholder="R. Boa Vista"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-zinc-750 text-xs text-white focus:border-amber-400 focus:outline-none"
                 />
               </div>
