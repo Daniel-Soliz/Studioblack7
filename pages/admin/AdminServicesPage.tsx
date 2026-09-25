@@ -20,7 +20,7 @@ export const AdminServicesPage: React.FC = () => {
   const [formPopular, setFormPopular] = useState(false);
   const [formStatus, setFormStatus] = useState<'active' | 'inactive'>('active');
   const [formImage, setFormImage] = useState('');
-  const [formImageFit, setFormImageFit] = useState<'cover' | 'contain'>('cover');
+  const [formImageFit, setFormImageFit] = useState<'cover' | 'contain'>('contain');
   const [formImagePositionX, setFormImagePositionX] = useState(50);
   const [formImagePositionY, setFormImagePositionY] = useState(50);
 
@@ -43,7 +43,7 @@ export const AdminServicesPage: React.FC = () => {
     setFormPopular(false);
     setFormStatus('active');
     setFormImage('');
-    setFormImageFit('cover');
+    setFormImageFit('contain');
     setFormImagePositionX(50);
     setFormImagePositionY(50);
   };
@@ -59,7 +59,7 @@ export const AdminServicesPage: React.FC = () => {
     setFormPopular(s.popular || false);
     setFormStatus(s.status || 'active');
     setFormImage(s.image || '');
-    setFormImageFit(s.imageFit || 'cover');
+    setFormImageFit(s.imageFit || 'contain');
     setFormImagePositionX(s.imagePositionX ?? 50);
     setFormImagePositionY(s.imagePositionY ?? 50);
   };
@@ -73,6 +73,9 @@ export const AdminServicesPage: React.FC = () => {
     try {
       const url = await CloudStoreService.uploadImageFromFile(file, 'services');
       setFormImage(url);
+      setFormImageFit('contain');
+      setFormImagePositionX(50);
+      setFormImagePositionY(50);
       setFeedback('Imagem enviada com sucesso. Agora salve o serviço para publicar.');
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : 'Não foi possível enviar a imagem.');
@@ -270,9 +273,14 @@ export const AdminServicesPage: React.FC = () => {
                     Foto do trabalho
                   </label>
                   <div className="rounded-2xl border border-zinc-800 bg-black/40 overflow-hidden">
-                    <div className="aspect-[16/10] bg-black/60 flex items-center justify-center">
+                    <div className="relative aspect-[16/10] bg-black/60 flex items-center justify-center overflow-hidden">
                       {formImage ? (
-                        <img src={formImage} alt="Prévia do serviço" className="w-full h-full" style={{ objectFit: formImageFit, objectPosition: `${formImagePositionX}% ${formImagePositionY}%` }} />
+                        <>
+                          {formImageFit === 'contain' && (
+                            <img src={formImage} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-40" />
+                          )}
+                          <img src={formImage} alt="Prévia do serviço" className="relative w-full h-full" style={{ objectFit: formImageFit, objectPosition: `${formImagePositionX}% ${formImagePositionY}%` }} />
+                        </>
                       ) : (
                         <div className="text-center text-zinc-500 px-6">
                           <ImagePlus className="w-8 h-8 mx-auto mb-2" />
@@ -283,7 +291,7 @@ export const AdminServicesPage: React.FC = () => {
 
                     {formImage && (
                       <div className="p-3 border-t border-zinc-800 space-y-3">
-                        <p className="text-[11px] text-zinc-300">A prévia acima tem o mesmo formato do cartão no site.</p>
+                        <p className="text-[11px] text-zinc-300">Veja exatamente como a imagem aparecerá no cartão do site.</p>
                         <div className="flex gap-2" role="group" aria-label="Enquadramento da foto">
                           <button type="button" aria-pressed={formImageFit === 'cover'} onClick={() => setFormImageFit('cover')}
                             className={`px-3 py-2 rounded-lg text-xs font-bold ${formImageFit === 'cover' ? 'bg-amber-400 text-zinc-950' : 'bg-zinc-800 text-white'}`}>
