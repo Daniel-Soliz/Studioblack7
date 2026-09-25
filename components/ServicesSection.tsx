@@ -206,10 +206,10 @@ export const ServicesSection: React.FC = () => {
                 <img
                   src={image.src}
                   alt={image.alt}
-                  className="absolute inset-0 w-full h-full object-cover object-center"
+                  className="absolute inset-0 w-full h-full object-cover object-center scale-[1.06]"
                   loading="lazy"
                 />
-                <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/25 to-transparent">
+                <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/70 via-black/10 to-transparent">
                   <span className="text-[10px] uppercase tracking-wider font-bold text-white/90">
                     Trabalho #{index + 1}
                   </span>
