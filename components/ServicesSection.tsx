@@ -3,10 +3,10 @@ import { MessageCircle, Scissors, Sparkles, Clock3 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 const realWorkImages = [
-  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-1.webp`, alt: 'Corte masculino com acabamento e degradê - Studio Black7' },
-  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-2.webp`, alt: 'Acabamento frontal e penteado masculino - Studio Black7' },
-  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-3.webp`, alt: 'Penteado masculino visto de cima - Studio Black7' },
-  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-4.webp`, alt: 'Resultado final de corte masculino - Studio Black7' }
+  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-1.webp`, alt: 'Corte e barba com acabamento frontal - Studio Black7' },
+  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-2.webp`, alt: 'Degradê e cachos masculinos - Studio Black7' },
+  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-3.webp`, alt: 'Corte masculino com degradê e acabamento - Studio Black7' },
+  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-4.webp`, alt: 'Corte masculino em perfil lateral - Studio Black7' }
 ];
 
 export const ServicesSection: React.FC = () => {
@@ -205,8 +205,15 @@ export const ServicesSection: React.FC = () => {
               >
                 <img
                   src={image.src}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-40"
+                  loading="lazy"
+                />
+                <img
+                  src={image.src}
                   alt={image.alt}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  className="relative w-full h-full object-contain"
                   loading="lazy"
                 />
                 <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/25 to-transparent">
