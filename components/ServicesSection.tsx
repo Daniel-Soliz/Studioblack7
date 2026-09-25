@@ -205,15 +205,8 @@ export const ServicesSection: React.FC = () => {
               >
                 <img
                   src={image.src}
-                  alt=""
-                  aria-hidden="true"
-                  className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-40"
-                  loading="lazy"
-                />
-                <img
-                  src={image.src}
                   alt={image.alt}
-                  className="relative w-full h-full object-contain"
+                  className="absolute inset-0 w-full h-full object-cover object-center"
                   loading="lazy"
                 />
                 <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/25 to-transparent">
