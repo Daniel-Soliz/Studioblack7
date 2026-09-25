@@ -197,11 +197,11 @@ export const ServicesSection: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 -mx-2 sm:mx-0">
             {realWorkImages.map((image, index) => (
               <div
                 key={image.src}
-                className="group relative aspect-[4/5] overflow-hidden rounded-2xl bg-zinc-900 border border-zinc-800 shadow-lg"
+                className="group relative aspect-[4/5] overflow-hidden rounded-xl sm:rounded-2xl shadow-lg"
               >
                 <img
                   src={image.src}
@@ -209,7 +209,7 @@ export const ServicesSection: React.FC = () => {
                   className="absolute inset-0 w-full h-full object-cover object-center scale-[1.06]"
                   loading="lazy"
                 />
-                <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/70 via-black/10 to-transparent">
+                <div className="absolute left-2 bottom-2 rounded-md bg-black/60 px-2 py-1">
                   <span className="text-[10px] uppercase tracking-wider font-bold text-white/90">
                     Trabalho #{index + 1}
                   </span>
