@@ -3,10 +3,10 @@ import { MessageCircle, Scissors, Sparkles, Clock3 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 const realWorkImages = [
-  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-1.webp`, alt: 'Corte e barba com acabamento frontal - Studio Black7' },
-  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-2.webp`, alt: 'Degradê e cachos masculinos - Studio Black7' },
-  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-3.webp`, alt: 'Corte masculino com degradê e acabamento - Studio Black7' },
-  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-4.webp`, alt: 'Corte masculino em perfil lateral - Studio Black7' }
+  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-1-20260925.webp`, alt: 'Corte e barba com acabamento frontal - Studio Black7' },
+  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-2-20260925.webp`, alt: 'Degradê e cachos masculinos - Studio Black7' },
+  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-3-20260925.webp`, alt: 'Corte masculino com degradê e acabamento - Studio Black7' },
+  { src: `${import.meta.env.BASE_URL}services/studio-black7-work-4-20260925.webp`, alt: 'Corte masculino em perfil lateral - Studio Black7' }
 ];
 
 export const ServicesSection: React.FC = () => {
