@@ -20,6 +20,9 @@ export const AdminServicesPage: React.FC = () => {
   const [formPopular, setFormPopular] = useState(false);
   const [formStatus, setFormStatus] = useState<'active' | 'inactive'>('active');
   const [formImage, setFormImage] = useState('');
+  const [formImageFit, setFormImageFit] = useState<'cover' | 'contain'>('cover');
+  const [formImagePositionX, setFormImagePositionX] = useState(50);
+  const [formImagePositionY, setFormImagePositionY] = useState(50);
 
   const categories = [
     'Cortes',
@@ -40,6 +43,9 @@ export const AdminServicesPage: React.FC = () => {
     setFormPopular(false);
     setFormStatus('active');
     setFormImage('');
+    setFormImageFit('cover');
+    setFormImagePositionX(50);
+    setFormImagePositionY(50);
   };
 
   const openEdit = (s: ServiceItem) => {
@@ -53,6 +59,9 @@ export const AdminServicesPage: React.FC = () => {
     setFormPopular(s.popular || false);
     setFormStatus(s.status || 'active');
     setFormImage(s.image || '');
+    setFormImageFit(s.imageFit || 'cover');
+    setFormImagePositionX(s.imagePositionX ?? 50);
+    setFormImagePositionY(s.imagePositionY ?? 50);
   };
 
   const handleImageUpload = async (file?: File) => {
@@ -90,6 +99,9 @@ export const AdminServicesPage: React.FC = () => {
         popular: formPopular,
         status: formStatus,
         image: formImage || undefined,
+        imageFit: formImageFit,
+        imagePositionX: formImagePositionX,
+        imagePositionY: formImagePositionY,
         order: services.length + 1
       };
       saveServices([...services, newService]);
@@ -107,7 +119,10 @@ export const AdminServicesPage: React.FC = () => {
               description: formDescription.trim(),
               popular: formPopular,
               status: formStatus,
-              image: formImage || undefined
+              image: formImage || undefined,
+              imageFit: formImageFit,
+              imagePositionX: formImagePositionX,
+              imagePositionY: formImagePositionY
             }
           : s
       );
@@ -174,7 +189,7 @@ export const AdminServicesPage: React.FC = () => {
                     <td className="py-3 px-4">
                       <div className="w-14 h-14 rounded-xl overflow-hidden bg-black/60 border border-zinc-800 flex items-center justify-center">
                         {s.image ? (
-                          <img src={s.image} alt={s.name} className="w-full h-full object-cover" />
+                          <img src={s.image} alt={s.name} className="w-full h-full" style={{ objectFit: s.imageFit || 'cover', objectPosition: `${s.imagePositionX ?? 50}% ${s.imagePositionY ?? 50}%` }} />
                         ) : (
                           <Scissors className="w-5 h-5 text-zinc-600" />
                         )}
@@ -255,9 +270,9 @@ export const AdminServicesPage: React.FC = () => {
                     Foto do trabalho
                   </label>
                   <div className="rounded-2xl border border-zinc-800 bg-black/40 overflow-hidden">
-                    <div className="aspect-[16/9] bg-black/60 flex items-center justify-center">
+                    <div className="aspect-[16/10] bg-black/60 flex items-center justify-center">
                       {formImage ? (
-                        <img src={formImage} alt="Prévia do serviço" className="w-full h-full object-cover" />
+                        <img src={formImage} alt="Prévia do serviço" className="w-full h-full" style={{ objectFit: formImageFit, objectPosition: `${formImagePositionX}% ${formImagePositionY}%` }} />
                       ) : (
                         <div className="text-center text-zinc-500 px-6">
                           <ImagePlus className="w-8 h-8 mx-auto mb-2" />
@@ -265,6 +280,32 @@ export const AdminServicesPage: React.FC = () => {
                         </div>
                       )}
                     </div>
+
+                    {formImage && (
+                      <div className="p-3 border-t border-zinc-800 space-y-3">
+                        <p className="text-[11px] text-zinc-300">A prévia acima tem o mesmo formato do cartão no site.</p>
+                        <div className="flex gap-2" role="group" aria-label="Enquadramento da foto">
+                          <button type="button" aria-pressed={formImageFit === 'cover'} onClick={() => setFormImageFit('cover')}
+                            className={`px-3 py-2 rounded-lg text-xs font-bold ${formImageFit === 'cover' ? 'bg-amber-400 text-zinc-950' : 'bg-zinc-800 text-white'}`}>
+                            Preencher o cartão
+                          </button>
+                          <button type="button" aria-pressed={formImageFit === 'contain'} onClick={() => setFormImageFit('contain')}
+                            className={`px-3 py-2 rounded-lg text-xs font-bold ${formImageFit === 'contain' ? 'bg-amber-400 text-zinc-950' : 'bg-zinc-800 text-white'}`}>
+                            Mostrar foto inteira
+                          </button>
+                        </div>
+                        {formImageFit === 'cover' && (
+                          <div className="space-y-2">
+                            <label className="block text-xs text-zinc-300" htmlFor="service-image-x">Posição horizontal: {formImagePositionX}%</label>
+                            <input id="service-image-x" type="range" min="0" max="100" value={formImagePositionX}
+                              onChange={(e) => setFormImagePositionX(Number(e.target.value))} className="w-full accent-amber-400" />
+                            <label className="block text-xs text-zinc-300" htmlFor="service-image-y">Posição vertical: {formImagePositionY}%</label>
+                            <input id="service-image-y" type="range" min="0" max="100" value={formImagePositionY}
+                              onChange={(e) => setFormImagePositionY(Number(e.target.value))} className="w-full accent-amber-400" />
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     <div className="p-3 flex flex-wrap gap-2">
                       <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-800 border border-zinc-700 text-xs font-bold text-white cursor-pointer hover:border-amber-400/50">
