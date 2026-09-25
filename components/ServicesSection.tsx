@@ -96,7 +96,8 @@ export const ServicesSection: React.FC = () => {
                   <img
                     src={service.image}
                     alt={`Exemplo de ${service.name}`}
-                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                    className="w-full h-full group-hover:scale-[1.02] transition-transform duration-300"
+                    style={{ objectFit: service.imageFit || 'cover', objectPosition: `${service.imagePositionX ?? 50}% ${service.imagePositionY ?? 50}%` }}
                     loading="lazy"
                   />
                 ) : (
