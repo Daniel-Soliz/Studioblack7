@@ -20,6 +20,9 @@ export interface ServiceItem {
   status?: 'active' | 'inactive';
   order?: number;
   image?: string;
+  imageFit?: 'cover' | 'contain';
+  imagePositionX?: number;
+  imagePositionY?: number;
 }
 
 export interface GalleryItem {
