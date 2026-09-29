@@ -36,6 +36,7 @@ export const Header: React.FC = () => {
     { label: 'Início', path: '/' },
     { label: 'Sobre', path: '/sobre' },
     { label: 'Serviços', path: '/servicos' },
+    { label: 'Agendar', path: '/agendar' },
     { label: 'Loja', path: '/loja' },
     { label: 'Localização', path: '/localizacao' },
     { label: 'Contato', path: '/contato' },
@@ -126,13 +127,12 @@ export const Header: React.FC = () => {
 
           {/* WhatsApp Booking CTA */}
           <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={`${import.meta.env.BASE_URL}agendar`}
+            target="_self"
             className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:brightness-105 transition-all"
           >
             <MessageCircle className="w-3.5 h-3.5 fill-zinc-950" />
-            <span>WhatsApp</span>
+            <span>Agendar</span>
           </a>
 
           {/* Subtle Admin Access link */}
