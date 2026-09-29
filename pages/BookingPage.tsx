@@ -24,9 +24,15 @@ export const BookingPage: React.FC = () => {
   const [busy, setBusy] = useState<{ start: string; end: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [payment, setPayment] = useState<{ reference: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string; amount: number } | null>(null);
+  const [payment, setPayment] = useState<{ reference: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string; amount: number } | null>(() => {
+    try { const saved = sessionStorage.getItem('sb7-booking-payment'); return saved ? JSON.parse(saved) : null; } catch { return null; }
+  });
   const [status, setStatus] = useState('');
   const [name, setName] = useState(''), [email, setEmail] = useState(''), [phone, setPhone] = useState('');
+  useEffect(() => {
+    if (payment) sessionStorage.setItem('sb7-booking-payment', JSON.stringify(payment));
+    else sessionStorage.removeItem('sb7-booking-payment');
+  }, [payment]);
   const service = services.find(s => s.id === serviceId);
   const today = inSaoPaulo(new Date());
   const maxDate = inSaoPaulo(new Date(Date.now() + 60 * 86400000));
@@ -85,7 +91,7 @@ export const BookingPage: React.FC = () => {
       <h1 className="font-['Cinzel'] text-3xl sm:text-4xl font-black mt-2">Agende e pague seu horário</h1>
       <p className="text-zinc-400 mt-3">Escolha o atendimento e pague com Pix. O horário é confirmado após a aprovação do pagamento.</p>
       {payment ? <section className="mt-8 rounded-2xl border border-amber-400/40 bg-zinc-900 p-6 sm:p-8 text-center space-y-5">
-        {status === 'confirmed' ? <><h2 className="text-2xl text-emerald-400 font-bold">Agendamento confirmado!</h2><p>Seu pagamento foi aprovado. Guarde o código {payment.reference}.</p></> : status === 'expired' ? <><h2 className="text-xl font-bold">Reserva expirada</h2><p>O horário foi liberado. Se você pagou, entre em contato com a equipe e informe o código {payment.reference}.</p></> : <>
+        {status === 'confirmed' ? <><h2 className="text-2xl text-emerald-400 font-bold">Agendamento confirmado!</h2><p>Seu pagamento foi aprovado. Guarde o código {payment.reference}.</p></> : status === 'expired' ? <><h2 className="text-xl font-bold">Reserva expirada</h2><p>O horário foi liberado. Se você pagou, entre em contato com a equipe e informe o código {payment.reference}.</p><button type="button" onClick={() => setPayment(null)} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Escolher outro horário</button></> : <>
           <h2 className="text-2xl font-bold text-amber-400">Pague R$ {payment.amount.toFixed(2).replace('.', ',')} por Pix</h2>
           <p className="text-sm text-zinc-300">Aguardando confirmação do Mercado Pago. O Pix vence em 30 minutos.</p>
           {payment.qrCodeBase64 && <img className="mx-auto w-60 h-60 rounded-lg bg-white p-2" alt="QR Code Pix" src={`data:image/png;base64,${payment.qrCodeBase64}`} />}
