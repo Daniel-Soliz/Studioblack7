@@ -85,9 +85,9 @@ export const BookingPage: React.FC = () => {
       <h1 className="font-['Cinzel'] text-3xl sm:text-4xl font-black mt-2">Agende e pague seu horário</h1>
       <p className="text-zinc-400 mt-3">Escolha o atendimento e pague com Pix. O horário é confirmado após a aprovação do pagamento.</p>
       {payment ? <section className="mt-8 rounded-2xl border border-amber-400/40 bg-zinc-900 p-6 sm:p-8 text-center space-y-5">
-        {status === 'confirmed' ? <><h2 className="text-2xl text-emerald-400 font-bold">Agendamento confirmado!</h2><p>Seu pagamento foi aprovado. Confira seu e-mail e guarde o código {payment.reference}.</p></> : status === 'expired' ? <><h2 className="text-xl font-bold">Reserva expirada</h2><p>O horário foi liberado. Se você pagou, entre em contato com a equipe e informe o código {payment.reference}.</p></> : <>
+        {status === 'confirmed' ? <><h2 className="text-2xl text-emerald-400 font-bold">Agendamento confirmado!</h2><p>Seu pagamento foi aprovado. Guarde o código {payment.reference}.</p></> : status === 'expired' ? <><h2 className="text-xl font-bold">Reserva expirada</h2><p>O horário foi liberado. Se você pagou, entre em contato com a equipe e informe o código {payment.reference}.</p></> : <>
           <h2 className="text-2xl font-bold text-amber-400">Pague R$ {payment.amount.toFixed(2).replace('.', ',')} por Pix</h2>
-          <p className="text-sm text-zinc-300">Aguardando confirmação do Mercado Pago. A reserva temporária dura 15 minutos.</p>
+          <p className="text-sm text-zinc-300">Aguardando confirmação do Mercado Pago. O Pix vence em 30 minutos.</p>
           {payment.qrCodeBase64 && <img className="mx-auto w-60 h-60 rounded-lg bg-white p-2" alt="QR Code Pix" src={`data:image/png;base64,${payment.qrCodeBase64}`} />}
           {payment.qrCode && <><textarea readOnly value={payment.qrCode} className="w-full h-24 rounded-xl bg-black p-3 text-xs text-zinc-200" aria-label="Código Pix copia e cola" /><button type="button" onClick={() => navigator.clipboard.writeText(payment.qrCode || '')} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Copiar código Pix</button></>}
           {payment.ticketUrl && <p><a href={payment.ticketUrl} target="_blank" rel="noopener noreferrer" className="underline text-amber-300">Abrir pagamento no Mercado Pago</a></p>}
