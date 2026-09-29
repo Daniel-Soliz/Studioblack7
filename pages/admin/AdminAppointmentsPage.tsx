@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AdminLayout } from '../components/admin/AdminLayout';
-import { useAuth } from '../context/AuthContext';
+import { AdminLayout } from '../../components/admin/AdminLayout';
+import { useAuth } from '../../context/AuthContext';
 
 type Appointment = { id: string; service_name: string; professional_name: string; customer_name: string; customer_email: string; customer_phone: string; start_at: string; end_at: string; amount_cents: number; status: string; payment_status: string; payment_reference: string };
 const api = 'https://oyghjlwujdmgfkopujip.supabase.co/functions/v1/appointments';
