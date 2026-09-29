@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageCircle, Scissors, Sparkles, Clock3 } from 'lucide-react';
+import { CalendarDays, Scissors, Sparkles, Clock3 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 const realWorkImages = [
@@ -171,10 +171,10 @@ export const ServicesSection: React.FC = () => {
 
                   <Link
                     to={`/agendar?servico=${encodeURIComponent(service.id)}`}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/10"
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-zinc-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-amber-500/10"
                     aria-label={`Agendar ${service.name} online`}
                   >
-                    <MessageCircle className="w-4 h-4" />
+                    <CalendarDays className="w-4 h-4" />
                     <span>Agendar e pagar online</span>
                   </Link>
                 </div>
