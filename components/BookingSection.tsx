@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { MessageCircle, Sparkles, Clock, ShieldCheck, PhoneCall } from 'lucide-react';
 import { WHATSAPP_NUMBER, createWhatsAppBookingUrl } from '../data/barbershop';
 
@@ -38,15 +39,15 @@ export const BookingSection: React.FC = () => {
 
               <div>
                 <h3 className="font-['Cinzel'] text-2xl font-bold text-white">
-                  Agendamento via WhatsApp
+                  Agendamento online
                 </h3>
                 <p className="text-xs uppercase tracking-widest text-amber-400 font-semibold mt-1">
-                  Atendimento direto e imediato
+                  Escolha um horário e pague com Pix
                 </p>
               </div>
 
               <p className="text-sm text-zinc-300 leading-relaxed">
-                Atendimento personalizado com a equipe do Studio Black7. Escolha o serviço, data e horário desejado com confirmação rápida e sem complicação.
+                Escolha serviço, profissional e horário. A confirmação aparece após a aprovação do pagamento Pix.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
@@ -56,7 +57,7 @@ export const BookingSection: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2 p-2.5 rounded-xl bg-black/40 border border-zinc-800 text-xs text-zinc-300">
                   <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Confirmação garantida</span>
+                  <span>Confirmação após pagamento</span>
                 </div>
               </div>
 
@@ -68,15 +69,13 @@ export const BookingSection: React.FC = () => {
               </div>
             </div>
 
-            <a
-              href={createWhatsAppBookingUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to="/agendar"
               className="w-full inline-flex items-center justify-center gap-2.5 py-4 px-6 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-zinc-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-500/25 hover:brightness-105 hover:scale-[1.01] transition-all"
             >
               <MessageCircle className="w-5 h-5 fill-zinc-950" />
-              <span>Agendar pelo WhatsApp</span>
-            </a>
+              <span>Agendar e pagar online</span>
+            </Link>
           </div>
         </div>
 
