@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, StoreProvider, CartProvider } from './context';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
+import { BookingPage } from './pages/BookingPage';
+import { AdminAppointmentsPage } from './pages/admin/AdminAppointmentsPage';
 
 // Public Pages
 import {
@@ -59,6 +61,7 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/sobre" element={<AboutPage />} />
               <Route path="/servicos" element={<ServicesPage />} />
+              <Route path="/agendar" element={<BookingPage />} />
               <Route path="/localizacao" element={<LocationPage />} />
               <Route path="/contato" element={<ContactPage />} />
 
@@ -74,6 +77,7 @@ export default function App() {
               <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
               <Route path="/admin/acessos" element={<AdminAccessPage />} />
               <Route path="/admin/servicos" element={<AdminServicesPage />} />
+              <Route path="/admin/agendamentos" element={<AdminAppointmentsPage />} />
               <Route path="/admin/produtos" element={<AdminProductsPage />} />
               <Route path="/admin/produtos/novo" element={<AdminProductFormPage />} />
               <Route path="/admin/produtos/:id" element={<AdminProductFormPage />} />
