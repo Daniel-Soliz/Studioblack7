@@ -22,6 +22,8 @@ export const BookingPage: React.FC = () => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [busy, setBusy] = useState<{ start: string; end: string }[]>([]);
+  const [windows, setWindows] = useState<{ start: string; end: string }[]>([]);
+  const [closures, setClosures] = useState<{ start?: string; end?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [payment, setPayment] = useState<{ reference: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string; amount: number } | null>(() => {
@@ -37,26 +39,29 @@ export const BookingPage: React.FC = () => {
   const today = inSaoPaulo(new Date());
   const maxDate = inSaoPaulo(new Date(Date.now() + 60 * 86400000));
   const options = useMemo(() => {
-    if (!date || !service || new Date(`${date}T12:00:00-03:00`).getUTCDay() === 0) return [];
+    if (!date || !service || loading) return [];
     const length = Math.max(20, Math.min(180, minutes(service.duration)));
     const slots: string[] = [];
-    for (const [begin, end] of [[540, 720], [810, 1260]]) {
+    for (const window of windows) {
+      const begin = Number(window.start.slice(0, 2)) * 60 + Number(window.start.slice(3));
+      const end = Number(window.end.slice(0, 2)) * 60 + Number(window.end.slice(3));
       for (let minute = begin; minute + length <= end; minute += 30) {
         const hour = `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`;
         const start = new Date(`${date}T${hour}:00-03:00`).getTime();
         const finish = start + length * 60000;
-        if (start > Date.now() + 30 * 60000 && !busy.some(b => start < Date.parse(b.end) && finish > Date.parse(b.start))) slots.push(hour);
+        const closed = closures.some(c => !c.start || !c.end || minute < Number(c.end.slice(0, 2)) * 60 + Number(c.end.slice(3)) && minute + length > Number(c.start.slice(0, 2)) * 60 + Number(c.start.slice(3)));
+        if (start > Date.now() + 30 * 60000 && !closed && !busy.some(b => start < Date.parse(b.end) && finish > Date.parse(b.start))) slots.push(hour);
       }
     }
     return slots;
-  }, [date, service, busy]);
+  }, [date, service, busy, windows, closures, loading]);
 
   useEffect(() => {
     setTime('');
     if (!date || !professionalId) return;
     let active = true;
-    setLoading(true);
-    request({ action: 'availability', date, professionalId }).then(r => { if (active) setBusy(r.busy || []); }).catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); });
+    setLoading(true); setBusy([]); setWindows([]); setClosures([]);
+    request({ action: 'availability', date, professionalId }).then(r => { if (active) { setBusy(r.busy || []); setWindows(r.intervals || []); setClosures(r.closures || []); setError(''); } }).catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [date, professionalId]);
 
@@ -81,7 +86,7 @@ export const BookingPage: React.FC = () => {
       setPayment(result); setStatus('pending_payment');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Falha ao reservar.');
-      if (date) request({ action: 'availability', date, professionalId }).then(r => setBusy(r.busy || [])).catch(() => {});
+      if (date) request({ action: 'availability', date, professionalId }).then(r => { setBusy(r.busy || []); setWindows(r.intervals || []); setClosures(r.closures || []); }).catch(() => {});
     } finally { setLoading(false); }
   };
 
