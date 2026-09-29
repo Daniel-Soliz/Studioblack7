@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MessageCircle, Scissors, Sparkles, Clock3 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
@@ -63,7 +64,7 @@ export const ServicesSection: React.FC = () => {
             Serviços
           </h2>
           <p className="text-base sm:text-lg text-zinc-300 font-medium">
-            Escolha o serviço desejado e fale diretamente com o Studio Black7 pelo WhatsApp.
+            Escolha seu serviço, horário e profissional. Pague pelo site com Pix.
           </p>
           <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mt-2" />
         </div>
@@ -164,20 +165,18 @@ export const ServicesSection: React.FC = () => {
                       </span>
                     </div>
                     <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-bold">
-                      Atendimento via WhatsApp
+                      Agendamento online
                     </span>
                   </div>
 
-                  <a
-                    href={createServiceWhatsAppUrl(service.name, service.price, service.duration)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    to={`/agendar?servico=${encodeURIComponent(service.id)}`}
                     className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/10"
-                    aria-label={`Consultar ${service.name} pelo WhatsApp`}
+                    aria-label={`Agendar ${service.name} online`}
                   >
                     <MessageCircle className="w-4 h-4" />
-                    <span>Consultar no WhatsApp</span>
-                  </a>
+                    <span>Agendar e pagar online</span>
+                  </Link>
                 </div>
               </div>
             </div>
