@@ -51,7 +51,7 @@ export const BookingPage: React.FC = () => {
     for (const window of windows) {
       const begin = Number(window.start.slice(0, 2)) * 60 + Number(window.start.slice(3));
       const end = Number(window.end.slice(0, 2)) * 60 + Number(window.end.slice(3));
-      for (let minute = begin; minute + length <= end; minute += 30) {
+      for (let minute = begin; minute + length <= end; minute += 60) {
         const hour = `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`;
         const start = new Date(`${date}T${hour}:00-03:00`).getTime();
         const finish = start + length * 60000;
