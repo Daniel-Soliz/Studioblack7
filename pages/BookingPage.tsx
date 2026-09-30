@@ -17,6 +17,7 @@ const minutes = (duration?: string) => duration?.includes(':') ? Number(duration
 export const BookingPage: React.FC = () => {
   const { services } = useStore();
   const [params] = useSearchParams();
+  const [step, setStep] = useState(1);
   const [serviceId, setServiceId] = useState(params.get('servico') || '');
   const [professionalId, setProfessionalId] = useState('ray-black7');
   const [date, setDate] = useState('');
@@ -80,7 +81,7 @@ export const BookingPage: React.FC = () => {
   }, [payment, status]);
 
   const reserve = async (event: React.FormEvent) => {
-    event.preventDefault(); setError(''); setLoading(true);
+    event.preventDefault(); if (step !== 3) return; setError(''); setLoading(true);
     try {
       const result = await request({ action: 'reserve', serviceId, professionalId, date, time, name, email, phone });
       setPayment(result); setStatus('pending_payment');
@@ -93,8 +94,8 @@ export const BookingPage: React.FC = () => {
   return <div className="min-h-screen min-w-0 bg-[#08080a] text-white"><Header />
     <main className="mx-auto w-full min-w-0 max-w-4xl px-4 pt-32 pb-20">
       <p className="text-amber-400 text-xs font-bold uppercase tracking-[.25em]">Studio Black7</p>
-      <h1 className="font-['Cinzel'] text-3xl sm:text-4xl font-black mt-2">Agende e pague seu horário</h1>
-      <p className="text-zinc-400 mt-3">Escolha o atendimento e pague com Pix. O horário é confirmado após a aprovação do pagamento.</p>
+      <h1 className="font-['Cinzel'] text-3xl sm:text-4xl font-black mt-2">Vamos marcar seu horário?</h1>
+      <p className="text-zinc-400 mt-3">São só 3 passos. Escolha o serviço, marque o horário e informe seus dados.</p>
       {payment ? <section className="mt-8 w-full min-w-0 rounded-2xl border border-amber-400/40 bg-zinc-900 p-5 sm:p-8 text-center space-y-5">
         {status === 'confirmed' ? <><h2 className="text-2xl text-emerald-400 font-bold">Agendamento confirmado!</h2><p>Seu pagamento foi aprovado. Guarde o código {payment.reference}.</p></> : status === 'expired' ? <><h2 className="text-xl font-bold">Reserva expirada</h2><p>O horário foi liberado. Se você pagou, entre em contato com a equipe e informe o código {payment.reference}.</p><button type="button" onClick={() => setPayment(null)} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Escolher outro horário</button></> : <>
           <h2 className="text-2xl font-bold text-amber-400">Pague R$ {payment.amount.toFixed(2).replace('.', ',')} por Pix</h2>
@@ -105,14 +106,26 @@ export const BookingPage: React.FC = () => {
           <p className="break-all text-xs text-zinc-500">Código da reserva: {payment.reference}</p>
         </>}
       </section> : <form onSubmit={reserve} className="mt-8 grid w-full min-w-0 max-w-full gap-6 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4 sm:p-8">
-        <label className="grid min-w-0 gap-2 text-sm font-bold">1. Serviço<select required value={serviceId} onChange={e => setServiceId(e.target.value)} className="block box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-3"><option value="">Selecione o serviço</option>{services.filter(s => s.status !== 'inactive' && Number(s.priceNumber) > 0).map(s => <option key={s.id} value={s.id}>{s.name} · {s.price} · {s.duration || '40 min'}</option>)}</select></label>
-        <label className="grid min-w-0 gap-2 text-sm font-bold">2. Profissional<select value={professionalId} onChange={e => setProfessionalId(e.target.value)} className="block box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-3">{TEAM.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
-        <label className="grid min-w-0 gap-2 text-sm font-bold">3. Data<input required type="date" min={today} max={maxDate} value={date} onChange={e => { setDate(e.target.value); setError(''); }} className="block box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-3" /></label>
-        {date && <div className="min-w-0"><p className="font-bold text-sm mb-3">4. Horário disponível {loading ? '· Carregando...' : ''}</p><div className="grid grid-cols-3 sm:grid-cols-5 gap-2">{options.map(hour => <button key={hour} type="button" onClick={() => setTime(hour)} className={`min-w-0 rounded-lg border p-2.5 text-sm ${time === hour ? 'bg-amber-400 text-black border-amber-400' : 'border-zinc-700 bg-zinc-950 text-white'}`}>{hour}</button>)}</div>{!loading && !options.length && <p className="text-sm text-zinc-400">Sem horários nesta data. Escolha outro dia.</p>}</div>}
-        <div className="grid min-w-0 sm:grid-cols-2 gap-4"><label className="grid min-w-0 gap-2 text-sm">Nome<input required minLength={2} value={name} onChange={e => setName(e.target.value)} className="box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-3" /></label><label className="grid min-w-0 gap-2 text-sm">Telefone<input required type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-3" /></label></div>
-        <label className="grid min-w-0 gap-2 text-sm">E-mail para contato<input required type="email" value={email} onChange={e => setEmail(e.target.value)} className="box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-3" /></label>
+        <div className="flex items-center gap-2" aria-label={`Etapa ${step} de 3`}>{['Serviço', 'Horário', 'Seus dados'].map((label, i) => <span key={label} className={`flex-1 rounded-lg px-2 py-3 text-center text-sm font-bold ${step === i + 1 ? 'bg-amber-400 text-black' : 'bg-zinc-800 text-zinc-400'}`}>{i + 1}. {label}</span>)}</div>
+        {step === 1 && <section className="space-y-4 min-w-0">
+          <h2 className="text-xl font-bold">O que você quer fazer?</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{services.filter(s => s.status !== 'inactive' && Number(s.priceNumber) > 0).map(s => <button type="button" key={s.id} aria-pressed={serviceId === s.id} onClick={() => { setServiceId(s.id); setTime(''); }} className={`rounded-xl border-2 p-4 text-left min-w-0 ${serviceId === s.id ? 'border-amber-400 bg-amber-400/10' : 'border-zinc-700 bg-zinc-950'}`}><span className="block text-lg font-bold break-words">{s.name}</span><span className="mt-1 block text-amber-300 font-semibold">{s.price}</span></button>)}</div>
+          <details className="rounded-xl bg-zinc-950 p-4"><summary className="cursor-pointer font-semibold">Quem vai atender? {TEAM.find(p => p.id === professionalId)?.name}</summary><div className="grid gap-2 mt-3">{TEAM.map(p => <button type="button" key={p.id} onClick={() => setProfessionalId(p.id)} aria-pressed={professionalId === p.id} className={`rounded-lg border p-3 text-left ${professionalId === p.id ? 'border-amber-400 text-amber-300' : 'border-zinc-700'}`}>{p.name}</button>)}</div></details>
+        </section>}
+        {step === 2 && <section className="space-y-4 min-w-0"><h2 className="text-xl font-bold">Qual dia fica bom para você?</h2>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">{Array.from({length: 7}, (_, i) => { const d = new Date(`${today}T12:00:00-03:00`); d.setUTCDate(d.getUTCDate() + i); const value = inSaoPaulo(d); return <button type="button" key={value} onClick={() => setDate(value)} aria-pressed={date === value} className={`rounded-xl border p-3 text-center ${date === value ? 'bg-amber-400 text-black border-amber-400' : 'bg-zinc-950 border-zinc-700'}`}><span className="block text-sm">{i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : d.toLocaleDateString('pt-BR', {weekday: 'short', timeZone: 'America/Sao_Paulo'})}</span><strong className="block text-lg">{d.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo'})}</strong></button>; })}</div>
+          <label className="grid min-w-0 gap-2 font-semibold">Ou escolha outra data<input type="date" min={today} max={maxDate} value={date} onChange={e => { setDate(e.target.value); setError(''); }} className="block box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-3" /></label>
+          {date && <div><h3 className="font-bold text-lg mb-3">Agora escolha a hora</h3>{loading ? <p role="status">Buscando horários...</p> : <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">{options.map(hour => <button type="button" key={hour} onClick={() => setTime(hour)} aria-pressed={time === hour} className={`rounded-xl border py-3 text-base font-bold ${time === hour ? 'bg-amber-400 text-black border-amber-400' : 'bg-zinc-950 border-zinc-700'}`}>{hour}</button>)}</div>}{!loading && !options.length && <p className="text-zinc-300">Este dia está sem horários. Toque em outra data.</p>}</div>}
+        </section>}
+        {step === 3 && <section className="space-y-4 min-w-0"><h2 className="text-xl font-bold">Como podemos falar com você?</h2>
+          <label className="grid min-w-0 gap-2 font-semibold">Seu nome<input required autoComplete="name" placeholder="Digite seu nome" minLength={2} value={name} onChange={e => setName(e.target.value)} className="box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-4 text-base" /></label>
+          <label className="grid min-w-0 gap-2 font-semibold">Seu telefone ou WhatsApp<input required autoComplete="tel" inputMode="tel" type="tel" placeholder="(11) 99999-9999" value={phone} onChange={e => setPhone(e.target.value)} className="box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-4 text-base" /></label>
+          <label className="grid min-w-0 gap-2 font-semibold">E-mail para o pagamento Pix<input required autoComplete="email" type="email" placeholder="seuemail@exemplo.com" value={email} onChange={e => setEmail(e.target.value)} className="box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-4 text-base" /><span className="text-sm font-normal text-zinc-400">O Mercado Pago pede este dado para gerar o Pix.</span></label>
+          <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 space-y-1"><strong className="block">Confira seu agendamento</strong><p>{service?.name} · {service?.price}</p><p>{date.split('-').reverse().join('/')} às {time}</p><p className="text-sm text-zinc-400">{TEAM.find(p => p.id === professionalId)?.name}</p></div>
+        </section>}
         {error && <p role="alert" className="text-red-400 text-sm">{error}</p>}
-        <button disabled={loading || !serviceId || !date || !time} className="rounded-xl bg-amber-400 px-6 py-4 font-black text-zinc-950 disabled:opacity-50">{loading ? 'Aguarde...' : 'Reservar horário e gerar Pix'}</button>
+        <div className="flex gap-3">{step > 1 && <button type="button" onClick={() => { setStep(step - 1); setError(''); }} className="rounded-xl border border-zinc-600 px-5 py-4 font-bold">Voltar</button>}{step < 3 ? <button type="button" disabled={step === 1 ? !serviceId : loading || !date || !time} onClick={() => { setStep(step + 1); setError(''); }} className="flex-1 rounded-xl bg-amber-400 px-5 py-4 font-black text-black disabled:opacity-40">Continuar</button> : <button type="submit" disabled={loading || !serviceId || !date || !time} className="flex-1 rounded-xl bg-amber-400 px-5 py-4 font-black text-black disabled:opacity-40">{loading ? 'Aguarde...' : 'Confirmar e pagar com Pix'}</button>}</div>
+
       </form>}
     </main><Footer /><FloatingWhatsApp /></div>;
 };
