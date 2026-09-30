@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Header, Footer, FloatingWhatsApp } from '../components';
 import { useStore } from '../context/StoreContext';
@@ -18,6 +18,11 @@ export const BookingPage: React.FC = () => {
   const { services } = useStore();
   const [params] = useSearchParams();
   const [step, setStep] = useState(1);
+  const previousStep = useRef(1);
+  useEffect(() => {
+    if (previousStep.current !== step) document.getElementById('booking-steps')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    previousStep.current = step;
+  }, [step]);
   const [serviceId, setServiceId] = useState(params.get('servico') || '');
   const [professionalId, setProfessionalId] = useState('ray-black7');
   const [date, setDate] = useState('');
@@ -106,7 +111,7 @@ export const BookingPage: React.FC = () => {
           <p className="break-all text-xs text-zinc-500">Código da reserva: {payment.reference}</p>
         </>}
       </section> : <form onSubmit={reserve} className="mt-8 grid w-full min-w-0 max-w-full gap-6 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4 sm:p-8">
-        <div className="flex items-center gap-2" aria-label={`Etapa ${step} de 3`}>{['Serviço', 'Horário', 'Seus dados'].map((label, i) => <span key={label} className={`flex-1 rounded-lg px-2 py-3 text-center text-sm font-bold ${step === i + 1 ? 'bg-amber-400 text-black' : 'bg-zinc-800 text-zinc-400'}`}>{i + 1}. {label}</span>)}</div>
+        <div id="booking-steps" className="scroll-mt-32 flex items-center gap-2" aria-label={`Etapa ${step} de 3`}>{['Serviço', 'Horário', 'Seus dados'].map((label, i) => <span key={label} className={`flex-1 rounded-lg px-2 py-3 text-center text-sm font-bold ${step === i + 1 ? 'bg-amber-400 text-black' : 'bg-zinc-800 text-zinc-400'}`}>{i + 1}. {label}</span>)}</div>
         {step === 1 && <section className="space-y-4 min-w-0">
           <h2 className="text-xl font-bold">O que você quer fazer?</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{services.filter(s => s.status !== 'inactive' && Number(s.priceNumber) > 0).map(s => <button type="button" key={s.id} aria-pressed={serviceId === s.id} onClick={() => { setServiceId(s.id); setTime(''); }} className={`rounded-xl border-2 p-4 text-left min-w-0 ${serviceId === s.id ? 'border-amber-400 bg-amber-400/10' : 'border-zinc-700 bg-zinc-950'}`}><span className="block text-lg font-bold break-words">{s.name}</span><span className="mt-1 block text-amber-300 font-semibold">{s.price}</span></button>)}</div>
