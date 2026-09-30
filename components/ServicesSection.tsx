@@ -175,7 +175,7 @@ export const ServicesSection: React.FC = () => {
                     aria-label={`Agendar ${service.name} online`}
                   >
                     <CalendarDays className="w-4 h-4" />
-                    <span>Agendar e pagar online</span>
+                    <span>Faça seu agendamento</span>
                   </Link>
                 </div>
               </div>
