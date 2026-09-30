@@ -43,6 +43,28 @@ function ScrollToTop() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    if (pathname.startsWith('/admin')) return;
+    try {
+      const now = Date.now();
+      let visitorId = localStorage.getItem('sb7-visitor');
+      if (!visitorId) { visitorId = crypto.randomUUID(); localStorage.setItem('sb7-visitor', visitorId); }
+      const saved = sessionStorage.getItem('sb7-visit');
+      let visit: { id: string; last: number; tracked: boolean } = saved ? JSON.parse(saved) : null;
+      if (!visit || now - visit.last > 30 * 60000) visit = { id: crypto.randomUUID(), last: now, tracked: false };
+      visit.last = now;
+      sessionStorage.setItem('sb7-visit', JSON.stringify(visit));
+      if (!visit.tracked) {
+        const sessionId = visit.id;
+        void fetch('https://oyghjlwujdmgfkopujip.supabase.co/functions/v1/appointments', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+          body: JSON.stringify({ action: 'track_access', sessionId, visitorId })
+        }).then(response => {
+          if (!response.ok) return;
+          const current = JSON.parse(sessionStorage.getItem('sb7-visit') || 'null');
+          if (current?.id === sessionId) sessionStorage.setItem('sb7-visit', JSON.stringify({ ...current, tracked: true }));
+        }).catch(() => {});
+      }
+    } catch { /* Browsing continues when storage or analytics is unavailable. */ }
   }, [pathname]);
 
   return null;
