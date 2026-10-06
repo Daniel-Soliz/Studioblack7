@@ -20,6 +20,8 @@ const api = 'https://oyghjlwujdmgfkopujip.supabase.co/functions/v1/appointments'
 export const AdminAppointmentsPage: React.FC = () => {
   const { session } = useAuth();
   const [tab, setTab] = useState<'reservas' | 'horarios' | 'folgas'>('reservas');
+  const [agendaFilter, setAgendaFilter] = useState<'confirmed' | 'pending_payment' | 'completed'>('confirmed');
+  const [agendaDate, setAgendaDate] = useState('');
   const [rows, setRows] = useState<Appointment[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,7 +59,27 @@ export const AdminAppointmentsPage: React.FC = () => {
     finally { setLoading(false); }
   }, [call, session?.token]);
   useEffect(() => { void refresh(); }, [refresh]);
-  const confirmedRows = rows.filter(row => row.status === 'confirmed');
+  useEffect(() => {
+    if (tab !== 'reservas' || !session?.token) return;
+    let active = true, checking = false;
+    const update = async () => {
+      if (checking) return;
+      checking = true;
+      try { const data = await call('admin_list'); if (active) setRows(data.appointments || []); }
+      catch (e) { if (active) setError(e instanceof Error ? e.message : 'Falha ao atualizar agenda.'); }
+      finally { checking = false; }
+    };
+    const timer = window.setInterval(update, 15000);
+    window.addEventListener('focus', update);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener('focus', update); };
+  }, [tab, call, session?.token]);
+  const dateKey = (value: string) => {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(value));
+    return ['year', 'month', 'day'].map(key => parts.find(p => p.type === key)?.value).join('-');
+  };
+  const agendaRows = rows.filter(row => row.status === agendaFilter && (!agendaDate || dateKey(row.start_at) === agendaDate)).sort((a, b) => Date.parse(a.start_at) - Date.parse(b.start_at));
+  const money = (cents: number) => (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const clock = (value: string) => new Date(value).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
   const change = async (id: string, status: string) => {
     if (!window.confirm(status === 'cancelled' ? 'Cancelar este agendamento? Um pagamento já realizado não será estornado automaticamente.' : 'Marcar atendimento como concluído?')) return;
     try { await call('admin_update', { id, status }); await refresh(); }
@@ -158,14 +180,27 @@ export const AdminAppointmentsPage: React.FC = () => {
       <p className="text-sm text-zinc-400">As mudanças valem para novas reservas. Atendimentos já confirmados continuam agendados.</p>
       <button type="button" disabled={loading} onClick={saveSettings} className="rounded-xl bg-amber-400 px-6 py-3 font-black text-black disabled:opacity-50">Salvar {tab === 'horarios' ? 'meus horários' : 'minhas folgas'}</button>
     </section>}
-    {tab === 'reservas' && <><h2 className="text-xl font-bold">Seus clientes agendados</h2>
-    <div className="grid gap-3">{confirmedRows.map(row => <article key={row.id} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 space-y-2">
-      <div className="flex flex-wrap justify-between gap-2"><strong>{new Date(row.start_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })} · {row.service_name}</strong><span className={row.payment_status === 'paid' ? 'text-emerald-400' : 'text-amber-400'}>{({pending_payment: 'Aguardando Pix', confirmed: 'Confirmado', completed: 'Atendido', cancelled: 'Cancelado', expired: 'Reserva vencida'} as Record<string,string>)[row.status] || row.status}</span></div>
-      <p className="text-sm text-zinc-300">{row.professional_name} · Pix recebido: R$ {(row.amount_cents / 100).toFixed(2).replace('.', ',')}</p>
-      {(row.service_total_cents ?? row.amount_cents) > row.amount_cents && <p className="text-sm font-semibold text-amber-300">Entrada de 50% · Restante no atendimento: R$ {(((row.service_total_cents ?? row.amount_cents) - row.amount_cents) / 100).toFixed(2).replace('.', ',')}</p>}
-      <p className="break-words text-sm text-zinc-300">{row.customer_name} · {row.customer_phone} · {row.customer_email}</p>
-      <p className="break-all text-xs text-zinc-500">Código: {row.payment_reference}</p>
-      {row.status === 'confirmed' && <div className="flex gap-2"><button onClick={() => change(row.id, 'completed')} className="rounded-lg bg-emerald-700 px-3 py-2 text-sm">Concluir</button><button onClick={() => change(row.id, 'cancelled')} className="rounded-lg bg-zinc-700 px-3 py-2 text-sm">Cancelar</button></div>}
-    </article>)}{!loading && !confirmedRows.length && <p className="text-zinc-400">Ainda não há agendamentos confirmados.</p>}</div></>}
+    {tab === 'reservas' && <section className="space-y-5 min-w-0">
+      <div><h2 className="text-xl font-bold">Sua agenda de clientes</h2><p className="mt-2 text-sm text-zinc-400">Escolher uma hora no site ainda não cria uma reserva. Ao gerar o Pix, ela aparece em Aguardando Pix; após o pagamento aprovado, em Confirmados.</p></div>
+      <div className="grid grid-cols-3 gap-2">{([['confirmed', 'Confirmados'], ['pending_payment', 'Aguardando Pix'], ['completed', 'Atendidos']] as const).map(([value, label]) => <button key={value} type="button" onClick={() => setAgendaFilter(value)} aria-pressed={agendaFilter === value} className={'min-w-0 rounded-xl border p-3 text-center ' + (agendaFilter === value ? 'border-amber-400 bg-amber-400/10 text-amber-300' : 'border-zinc-700 bg-zinc-900 text-zinc-300')}><strong className="block text-2xl">{rows.filter(r => r.status === value).length}</strong><span className="mt-1 block text-xs sm:text-sm font-semibold">{label}</span></button>)}</div>
+      <div className="flex flex-wrap items-end gap-3"><label className="grid min-w-0 gap-2 text-sm font-semibold">Filtrar por dia<input type="date" value={agendaDate} onChange={e => setAgendaDate(e.target.value)} className="min-w-0 rounded-xl border border-zinc-700 bg-zinc-900 p-3" /></label><button type="button" onClick={() => setAgendaDate('')} className="rounded-xl border border-zinc-700 px-4 py-3 text-sm">Ver todas as datas</button><span className="text-xs text-zinc-400">Atualização automática a cada 15 segundos · horário de São Paulo</span></div>
+      {agendaFilter === 'pending_payment' && <p className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 text-sm text-amber-200">Estas reservas ainda não estão confirmadas. O horário fica reservado temporariamente enquanto o cliente paga o Pix.</p>}
+      <div className="grid gap-4 lg:grid-cols-2">{agendaRows.map(row => {
+        const total = row.service_total_cents ?? row.amount_cents;
+        const received = row.payment_status === 'paid' ? row.amount_cents : 0;
+        const remaining = total - received;
+        const labels = { confirmed: 'Confirmado', pending_payment: 'Aguardando Pix', completed: 'Atendido' };
+        return <article key={row.id} className="min-w-0 rounded-2xl border border-zinc-700 bg-zinc-900 p-4 sm:p-5 space-y-4">
+          <div className="flex flex-wrap justify-between gap-3"><div><p className="text-sm capitalize text-zinc-300">{new Date(row.start_at).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}</p><strong className="mt-1 block text-2xl text-amber-300">{clock(row.start_at)} – {clock(row.end_at)}</strong></div><span className={'h-fit rounded-full px-3 py-2 text-xs font-bold ' + (row.status === 'pending_payment' ? 'bg-amber-400/10 text-amber-300' : 'bg-emerald-500/10 text-emerald-300')}>{labels[row.status as keyof typeof labels]}</span></div>
+          <div className="border-t border-zinc-800 pt-4"><h3 className="break-words text-xl font-bold">{row.customer_name}</h3><p className="mt-1 font-semibold text-amber-200">{row.service_name}</p><p className="mt-1 text-sm text-zinc-400">Quem atende: {row.professional_name}</p><p className="mt-2 break-words text-sm">{row.customer_phone}</p><p className="break-words text-xs text-zinc-400">{row.customer_email}</p></div>
+          <dl className="grid grid-cols-3 gap-2 rounded-xl bg-zinc-950 p-3 text-sm"><div><dt className="text-xs text-zinc-400">Valor do serviço</dt><dd className="mt-1 font-bold">{money(total)}</dd></div><div><dt className="text-xs text-zinc-400">Pix recebido</dt><dd className="mt-1 font-bold text-emerald-300">{money(received)}</dd></div><div><dt className="text-xs text-zinc-400">{row.status === 'pending_payment' ? 'A pagar' : 'Saldo no atendimento'}</dt><dd className="mt-1 font-bold text-amber-300">{money(remaining)}</dd></div></dl>
+          {row.status === 'pending_payment' && <p className="text-xs text-zinc-400">Pix gerado: {money(row.amount_cents)}. A confirmação acontece automaticamente após aprovação.</p>}
+          {row.status !== 'pending_payment' && <p className="text-sm text-zinc-300">{remaining > 0 ? 'Entrada de 50% paga. Receba o saldo no atendimento.' : 'Pagamento completo aprovado.'}</p>}
+          {row.status === 'confirmed' && <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => change(row.id, 'completed')} className="rounded-xl bg-emerald-700 px-3 py-3 text-sm font-bold">Marcar como atendido</button><button type="button" onClick={() => change(row.id, 'cancelled')} className="rounded-xl border border-zinc-600 px-3 py-3 text-sm">Cancelar agendamento</button></div>}
+          <details className="text-xs text-zinc-500"><summary className="cursor-pointer">Código da reserva</summary><p className="mt-2 break-all">{row.payment_reference}</p></details>
+        </article>;
+      })}</div>
+      {!loading && !agendaRows.length && <div className="rounded-2xl border border-dashed border-zinc-700 p-8 text-center"><p className="font-bold">Nenhum {agendaFilter === 'confirmed' ? 'agendamento confirmado' : agendaFilter === 'completed' ? 'atendimento concluído' : 'Pix aguardando pagamento'}{agendaDate ? ' neste dia' : ' no momento'}.</p><p className="mt-2 text-sm text-zinc-400">{agendaFilter === 'confirmed' ? 'Consulte Aguardando Pix para reservas sem pagamento ou Atendidos para os cortes já concluídos.' : agendaFilter === 'completed' ? 'Use Marcar como atendido após realizar o serviço.' : 'As reservas aparecem aqui depois que o cliente gera o Pix.'}</p></div>}
+    </section>}
   </div></AdminLayout>;
 };
