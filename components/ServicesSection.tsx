@@ -175,14 +175,9 @@ export const ServicesSection: React.FC = () => {
           <style>{`
             @keyframes black7-work-loop { from { transform: translateX(0); } to { transform: translateX(-50%); } }
             .black7-work-viewport { overflow: hidden; width: 100%; }
-            .black7-work-track { display: flex; width: max-content; animation: black7-work-loop 96s linear infinite; }
+            .black7-work-track { display: flex; width: max-content; animation: black7-work-loop 60s linear infinite; }
             .black7-work-group { display: flex; flex-shrink: 0; gap: 16px; padding-right: 16px; }
             .black7-work-card { width: clamp(180px, 24vw, 280px); flex-shrink: 0; }
-            @media (prefers-reduced-motion: reduce) {
-              .black7-work-viewport { overflow-x: auto; }
-              .black7-work-track { animation: none; }
-              .black7-work-group[data-copy="true"] { display: none; }
-            }
           `}</style>
           <div className="black7-work-viewport rounded-2xl" role="region" aria-label="Fotos dos resultados Studio Black7">
             <div className="black7-work-track" style={{ animationPlayState: carouselPaused ? 'paused' : 'running' }}>
