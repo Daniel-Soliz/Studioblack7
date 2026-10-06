@@ -19,6 +19,7 @@ export interface PixPaymentStatusResult {
   status: string;
   statusDetail: string;
   paid: boolean;
+  closed?: boolean;
 }
 
 async function requestPix(payload: unknown): Promise<PixPaymentResult> {
@@ -54,6 +55,15 @@ export class PaymentService {
       payer: { name: input.customerName, email: input.customerEmail },
       items: input.items
     });
+  }
+
+  static async cancelStorePayment(orderId: string): Promise<void> {
+    const response = await fetch(PAYMENT_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: 'store', action: 'cancel_order', orderId })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok) throw new Error(data.error || 'Não foi possível cancelar o pedido.');
   }
 
   static async checkStorePayment(orderId: string): Promise<PixPaymentStatusResult> {
