@@ -1,3 +1,6 @@
+-- Half payments: keep charge separate from full service price.
+alter table public.appointments add column if not exists service_total_cents integer;
+
 -- Studio Black7 monthly dashboard. No client access to reports or visit records.
 create table if not exists public.site_visits (
  session_id uuid primary key, visitor_id uuid not null,
@@ -43,9 +46,9 @@ service_groups as (select service_id id,service_name name,
  count(*) filter(where active) scheduled,
  count(*) filter(where status='completed') completed,
  count(*) filter(where status='pending_payment') pending,
- coalesce(sum(amount_cents) filter(where active),0)/100.0 booked_amount,
+ coalesce(sum(coalesce(service_total_cents,amount_cents)) filter(where active),0)/100.0 booked_amount,
  coalesce(sum(amount_cents) filter(where payment_status='paid'),0)/100.0 received,
- min(amount_cents)/100.0 min_price,max(amount_cents)/100.0 max_price
+ min(coalesce(service_total_cents,amount_cents))/100.0 min_price,max(coalesce(service_total_cents,amount_cents))/100.0 max_price
  from am where active or payment_status='paid' group by service_id,service_name),
 product_groups as (select id,name,sum(quantity) quantity,sum(amount) amount
  from im where sold group by id,name),
@@ -63,7 +66,7 @@ select jsonb_build_object(
  'completed',(select count(*) from am where status='completed'),
  'pending',(select count(*) from am where status='pending_payment'),
  'cancelled',(select count(*) from am where status in ('cancelled','expired')),
- 'bookedAmount',(select coalesce(sum(amount_cents),0)/100.0 from am where active),
+ 'bookedAmount',(select coalesce(sum(coalesce(service_total_cents,amount_cents)),0)/100.0 from am where active),
  'serviceRevenue',(select coalesce(sum(amount_cents),0)/100.0 from am where payment_status='paid'),
  'productUnits',(select coalesce(sum(quantity),0) from im where sold),
  'paidOrders',(select count(*) from om where sold),
