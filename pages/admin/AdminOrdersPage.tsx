@@ -102,15 +102,17 @@ export const AdminOrdersPage: React.FC = () => {
     setTimeout(() => setFeedback(''), 3000);
   };
 
-  const handleDeleteOrder = (order: Order) => {
+  const handleDeleteOrder = async (order: Order) => {
     const ok = window.confirm(`Excluir o pedido #${order.orderNumber}? Esta ação não pode ser desfeita.`);
     if (!ok) return;
-    if (deleteOrder(order.id)) {
+    try {
+    if (await deleteOrder(order.id)) {
       if (selectedOrder?.id === order.id) setSelectedOrder(null);
       if (editingOrder?.id === order.id) setEditingOrder(null);
-      setFeedback('Pedido excluído com sucesso.');
+      setFeedback('Pedido removido do sistema e do banco de dados.');
       setTimeout(() => setFeedback(''), 3000);
     }
+    } catch { setFeedback('Não foi possível excluir do banco. Tente novamente.'); }
   };
 
   const getStatusBadge = (status: Order['status']) => {
