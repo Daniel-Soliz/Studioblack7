@@ -58,7 +58,7 @@ export const BookingConfirmed: React.FC<{ booking: ConfirmedBooking; reference: 
     <div className="rounded-2xl border border-zinc-700 bg-zinc-950 p-5 sm:p-6 space-y-5">
       <h3 className="text-lg font-bold text-amber-300">{booking.service}</h3>
       <dl className="grid gap-4 sm:grid-cols-2"><div><dt className="flex gap-2 text-sm text-zinc-400"><CalendarDays size={17} /> Dia</dt><dd className="mt-1 font-semibold capitalize">{date}</dd></div>
-        <div><dt className="flex gap-2 text-sm text-zinc-400"><Clock size={17} /> Horário de São Paulo</dt><dd className="mt-1 text-3xl font-bold">{time}</dd></div>
+        <div><dt className="flex gap-2 text-sm text-zinc-400"><Clock size={17} /> Horário de São Paulo</dt><dd className="mt-1 text-3xl font-bold">{time}</dd><dd className="mt-2 text-sm font-semibold text-amber-300">Chegue 10 minutos antes do seu corte.</dd></div>
         <div><dt className="text-sm text-zinc-400">Seu profissional</dt><dd className="mt-1 font-semibold">{booking.professional}</dd></div>
         <div><dt className="text-sm text-zinc-400">Valor pago por Pix</dt><dd className="mt-1 font-semibold text-emerald-300">{amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</dd></div></dl>
       <div className="border-t border-zinc-800 pt-4"><p className="flex items-center gap-2 text-sm text-zinc-400"><MapPin size={17} /> Onde será o atendimento</p><p className="mt-1">{ADDRESS.full}</p><a href={ADDRESS.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-amber-300 underline">Ver como chegar</a></div>
