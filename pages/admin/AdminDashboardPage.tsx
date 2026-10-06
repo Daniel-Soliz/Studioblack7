@@ -160,6 +160,8 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
 
+        <MonthlyReportSection />
+
         {/* 3 Core Metric Cards (Requested by user) */}
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -234,7 +236,6 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        <MonthlyReportSection />
 
         {/* Shortcuts for editing the site (Atalhos para editar o site) */}
         <div>
