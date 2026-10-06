@@ -45,7 +45,7 @@ export const CheckoutPage: React.FC = () => {
     total, 
     clearCart 
   } = useCart();
-  const { createOrder, updateOrderStatus } = useStore();
+  const { createOrder, updateOrderStatus, deleteOrder } = useStore();
   const navigate = useNavigate();
 
   const [restored] = useState(() => {
@@ -261,6 +261,7 @@ export const CheckoutPage: React.FC = () => {
     try {
       await PaymentService.cancelStorePayment(pixPayment.orderId);
       updateOrderStatus(completedOrder.id, 'cancelled', 'pending');
+      await deleteOrder(completedOrder.id);
       rememberStorePayment({ order: completedOrder, pix: pixPayment, state: 'cancelled' });
       navigate('/carrinho');
     } catch (error) { setErrorMessage(error instanceof Error ? error.message : 'Não foi possível cancelar.'); }
