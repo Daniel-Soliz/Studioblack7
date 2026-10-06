@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
       const professional = professionals.find(p => p.id === body.professionalId);
       const amount = Number(service?.priceNumber);
       if (!service || !professional || !(amount > 0) || amount > 5000) return respond({ error: 'Serviço ou profissional indisponível.' }, 400);
-      const duration = Math.max(20, Math.min(180, Number.parseInt(String(service.duration || '40'), 10) * (String(service.duration || '').includes(':') ? 60 : 1) + (String(service.duration || '').includes(':') ? Number(String(service.duration).split(':')[1]) : 0)));
+      const duration = 60;
       const customer_name = text(body.name), customer_email = text(body.email, 160).toLowerCase(), customer_phone = text(body.phone, 20).replace(/\D/g, '');
       if (customer_name.length < 2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(customer_email) || customer_phone.length < 10 || customer_phone.length > 13) return respond({ error: 'Informe nome, e-mail e telefone válidos.' }, 400);
       const times = slot(text(body.date, 10), text(body.time, 5), duration, professional.id, await loadSettings());
