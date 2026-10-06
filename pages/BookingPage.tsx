@@ -32,16 +32,59 @@ export const BookingPage: React.FC = () => {
   const [closures, setClosures] = useState<{ start?: string; end?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [payment, setPayment] = useState<{ reference: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string; amount: number; totalAmount?: number; remainingAmount?: number; booking?: ConfirmedBooking } | null>(() => {
-    try { if (params.get('servico')) return null; const saved = sessionStorage.getItem('sb7-booking-payment'); return saved ? JSON.parse(saved) : null; } catch { return null; }
-  });
+  type SavedPayment = { reference: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string; amount: number; totalAmount?: number; remainingAmount?: number; booking?: ConfirmedBooking; savedStatus?: string };
+  const readSavedPayments = (): SavedPayment[] => {
+    try {
+      const records = JSON.parse(localStorage.getItem('sb7-client-bookings') || '[]');
+      const legacy = JSON.parse(sessionStorage.getItem('sb7-booking-payment') || 'null');
+      const list = Array.isArray(records) ? records : [];
+      if (legacy?.reference && !list.some(r => r.reference === legacy.reference)) list.unshift(legacy);
+      return list.filter(r => /^[a-f0-9]{32}$/.test(r?.reference || '') && typeof r.amount === 'number').slice(0, 10);
+    } catch { return []; }
+  };
+  const [savedPayments, setSavedPayments] = useState<SavedPayment[]>(readSavedPayments);
+  const [payment, setPayment] = useState<SavedPayment | null>(null);
   const [paymentOption, setPaymentOption] = useState<'full' | 'half'>('full');
   const [status, setStatus] = useState('');
   const [name, setName] = useState(''), [email, setEmail] = useState(''), [phone, setPhone] = useState('');
+  const rememberPayment = (record: SavedPayment) => {
+    setSavedPayments(previous => {
+      const next = [record, ...previous.filter(r => r.reference !== record.reference)].slice(0, 10);
+      try { localStorage.setItem('sb7-client-bookings', JSON.stringify(next)); } catch { /* Current payment remains usable if storage is unavailable. */ }
+      return next;
+    });
+  };
   useEffect(() => {
-    if (payment) sessionStorage.setItem('sb7-booking-payment', JSON.stringify(payment));
-    else sessionStorage.removeItem('sb7-booking-payment');
-  }, [payment]);
+    if (!payment) return;
+    rememberPayment({ ...payment, savedStatus: status || payment.savedStatus || 'pending_payment' });
+  }, [payment, status]);
+  useEffect(() => {
+    let active = true;
+    const saved = readSavedPayments();
+    if (!saved.length) return;
+    void Promise.all(saved.map(async record => {
+      try {
+        const r = await request({ action: 'status', reference: record.reference });
+        return { ...record, amount: r.amount ?? record.amount, totalAmount: r.totalAmount ?? record.totalAmount, remainingAmount: r.remainingAmount ?? record.remainingAmount, savedStatus: r.status,
+          booking: r.service && r.start ? { ...record.booking, service: r.service, professional: r.professional, start: r.start } : record.booking };
+      } catch { return record; }
+    })).then(records => {
+      if (!active) return;
+      setSavedPayments(previous => {
+        const next = previous.map(record => records.find(r => r.reference === record.reference) || record);
+        try { localStorage.setItem('sb7-client-bookings', JSON.stringify(next)); sessionStorage.removeItem('sb7-booking-payment'); } catch {}
+        return next;
+      });
+    });
+    return () => { active = false; };
+  }, []);
+  const forgetPayment = (reference: string) => {
+    setSavedPayments(previous => {
+      const next = previous.filter(r => r.reference !== reference);
+      try { localStorage.setItem('sb7-client-bookings', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
   const service = services.find(s => s.id === serviceId);
   const today = inSaoPaulo(new Date());
   const maxDate = inSaoPaulo(new Date(Date.now() + 60 * 86400000));
@@ -73,7 +116,7 @@ export const BookingPage: React.FC = () => {
   }, [date, professionalId]);
 
   useEffect(() => {
-    if (!payment || status === 'confirmed' || status === 'expired') return;
+    if (!payment || ['confirmed', 'completed', 'expired', 'cancelled'].includes(status)) return;
     let active = true;
     let checking = false;
     let timer: number | undefined;
@@ -99,7 +142,7 @@ export const BookingPage: React.FC = () => {
             } : current);
           }
           setStatus(r.status);
-          terminal = r.status === 'confirmed' || r.status === 'expired';
+          terminal = ['confirmed', 'completed', 'expired', 'cancelled'].includes(r.status);
         }
       } catch { /* Never confirm without an authoritative server response. */ }
       finally {
@@ -128,12 +171,12 @@ export const BookingPage: React.FC = () => {
     event.preventDefault(); if (step !== 3) return; setError(''); setLoading(true);
     try {
       const result = await request({ action: 'reserve', serviceId, professionalId, date, time, name, email, phone, paymentOption });
-      setPayment({ ...result, booking: {
+      const record: SavedPayment = { ...result, savedStatus: 'pending_payment', booking: {
         service: service?.name || '', professional: TEAM.find(p => p.id === professionalId)?.name || '',
         start: new Date(date + 'T' + time + ':00-03:00').toISOString(),
         end: new Date(Date.parse(date + 'T' + time + ':00-03:00') + 60 * 60000).toISOString(),
         customer: name.trim(),
-      } }); setStatus('pending_payment');
+      } }; rememberPayment(record); setPayment(record); setStatus('pending_payment');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Falha ao reservar.');
       if (date) request({ action: 'availability', date, professionalId }).then(r => { setBusy(r.busy || []); setWindows(r.intervals || []); setClosures(r.closures || []); }).catch(() => {});
@@ -143,11 +186,28 @@ export const BookingPage: React.FC = () => {
   return <div className="min-h-screen min-w-0 bg-[#08080a] text-white"><Header />
     <main className="mx-auto w-full min-w-0 max-w-4xl px-4 pt-32 pb-20">
       <p className="text-amber-400 text-xs font-bold uppercase tracking-[.25em]">Studio Black7</p>
-      <h1 className="font-['Cinzel'] text-3xl sm:text-4xl font-black mt-2">{status === 'confirmed' ? 'Seu momento Black7' : 'Vamos marcar seu horário?'}</h1>
-      <p className="text-zinc-400 mt-3">{status === 'confirmed' ? 'Todos os detalhes do seu atendimento em um só lugar.' : 'São só 3 passos. Escolha o serviço, marque o horário e informe seus dados.'}</p>
+      <h1 className="font-['Cinzel'] text-3xl sm:text-4xl font-black mt-2">{['confirmed', 'completed'].includes(status) ? 'Seu momento Black7' : 'Vamos marcar seu horário?'}</h1>
+      <p className="text-zinc-400 mt-3">{['confirmed', 'completed'].includes(status) ? 'Todos os detalhes do seu atendimento em um só lugar.' : 'São só 3 passos. Escolha o serviço, marque o horário e informe seus dados.'}</p>
+      {!payment && savedPayments.length > 0 && <section className="mt-8 rounded-2xl border border-amber-400/40 bg-zinc-900 p-4 sm:p-6 space-y-4">
+        <h2 className="text-xl font-bold text-amber-300">Seus agendamentos neste celular</h2>
+        <p className="text-sm text-zinc-300">Saiu para abrir o banco? Continue o Pix da reserva abaixo. Você não precisa começar de novo.</p>
+        <div className="grid gap-3">{savedPayments.map(record => {
+          const expired = ['expired', 'cancelled'].includes(record.savedStatus || '');
+          const confirmed = ['confirmed', 'completed'].includes(record.savedStatus || '');
+          return <article key={record.reference} className="rounded-xl border border-zinc-700 bg-zinc-950 p-4 space-y-3">
+            <div className="flex flex-wrap justify-between gap-2"><strong>{record.booking?.service || 'Seu agendamento'}</strong><span className={expired ? 'text-red-300' : confirmed ? 'text-emerald-300' : 'text-amber-300'}>{expired ? 'Pix vencido ou reserva cancelada' : confirmed ? 'Pagamento aprovado' : 'Pagamento não finalizado'}</span></div>
+            {record.booking?.start && <p className="text-sm">{new Date(record.booking.start).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })}{record.booking.end && ' até ' + new Date(record.booking.end).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })}</p>}
+            <p className="text-sm text-zinc-300">Pix: R$ {record.amount.toFixed(2).replace('.', ',')}{Boolean(record.remainingAmount) && ' · restante no atendimento: R$ ' + record.remainingAmount!.toFixed(2).replace('.', ',')}</p>
+            {!expired && <button type="button" onClick={() => { setStatus('checking'); setPayment(record); setError(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-full rounded-xl bg-amber-400 px-4 py-3 font-bold text-black">{confirmed ? 'Ver meu agendamento' : 'Continuar pagamento Pix'}</button>}
+            {expired && <p className="text-sm text-zinc-400">Este Pix não deve mais ser pago. Escolha um novo horário abaixo.</p>}
+            {expired && <button type="button" onClick={() => forgetPayment(record.reference)} className="text-sm text-zinc-400 underline">Remover da minha lista</button>}
+          </article>;
+        })}</div>
+        <p className="text-xs text-zinc-400">A lista fica salva neste navegador. A confirmação e a validade do Pix são consultadas no sistema.</p>
+      </section>}
       {payment ? <section className="mt-8 w-full min-w-0 rounded-2xl border border-amber-400/40 bg-zinc-900 p-5 sm:p-8 text-center space-y-5">
-        {status !== 'confirmed' && <div className="text-left"><button type="button" onClick={returnToServices} className="inline-flex items-center gap-2 rounded-xl border border-zinc-600 px-4 py-3 font-bold"><span aria-hidden="true">←</span> Voltar e escolher outro serviço</button><p className="mt-2 text-xs text-zinc-400">Se não quiser continuar, não pague este Pix. Voltar não cancela o código já gerado; ele vence em 30 minutos.</p></div>}
-        {status === 'confirmed' ? payment.booking ? <BookingConfirmed booking={payment.booking} reference={payment.reference} amount={payment.amount} remainingAmount={payment.remainingAmount} onNewBooking={returnToServices} /> : <p role="status">Pagamento aprovado. Carregando os detalhes do agendamento...</p> : status === 'expired' ? <><h2 className="text-xl font-bold">Reserva expirada</h2><p>O horário foi liberado. Se você pagou, entre em contato com a equipe e informe o código {payment.reference}.</p><button type="button" onClick={() => setPayment(null)} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Escolher outro horário</button></> : <>
+        {!['confirmed', 'completed'].includes(status) && <div className="text-left"><button type="button" onClick={returnToServices} className="inline-flex items-center gap-2 rounded-xl border border-zinc-600 px-4 py-3 font-bold"><span aria-hidden="true">←</span> Voltar e escolher outro serviço</button><p className="mt-2 text-xs text-zinc-400">Se não quiser continuar, não pague este Pix. Voltar não cancela o código já gerado; ele vence em 30 minutos.</p></div>}
+        {['confirmed', 'completed'].includes(status) ? payment.booking ? <BookingConfirmed booking={payment.booking} reference={payment.reference} amount={payment.amount} remainingAmount={payment.remainingAmount} onNewBooking={returnToServices} /> : <p role="status">Pagamento aprovado. Carregando os detalhes do agendamento...</p> : status === 'checking' ? <p role="status">Consultando sua reserva e a validade do Pix...</p> : ['expired', 'cancelled'].includes(status) ? <><h2 className="text-xl font-bold">Reserva expirada</h2><p>O horário foi liberado. Se você pagou, entre em contato com a equipe e informe o código {payment.reference}.</p><button type="button" onClick={() => setPayment(null)} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Escolher outro horário</button></> : <>
           <h2 className="text-2xl font-bold text-amber-400">Pague R$ {payment.amount.toFixed(2).replace('.', ',')} por Pix</h2>
           {Boolean(payment.remainingAmount) && <p className="rounded-xl bg-amber-400/10 p-3 text-amber-200">Entrada de 50%. Restante de R$ {payment.remainingAmount!.toFixed(2).replace('.', ',')} para pagar no atendimento.</p>}
           <p className="text-sm text-zinc-300">Aguardando confirmação do Mercado Pago. Já pagou? Não pague novamente: estamos verificando automaticamente. O Pix vence em 30 minutos.</p>
