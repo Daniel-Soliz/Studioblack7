@@ -9,7 +9,7 @@ export function SavedStoreOrders() {
   const [records, setRecords] = useState(readStorePayments);
   const [busy, setBusy] = useState('');
   const [notice, setNotice] = useState('');
-  const { products, updateOrderStatus } = useStore();
+  const { products, updateOrderStatus, deleteOrder } = useStore();
   const { cart, addToCart } = useCart();
   useEffect(() => {
     let active = true;
@@ -39,6 +39,7 @@ export function SavedStoreOrders() {
     try {
       await PaymentService.cancelStorePayment(record.pix.orderId);
       updateOrderStatus(record.order.id, 'cancelled', 'pending');
+      await deleteOrder(record.order.id);
       rememberStorePayment({ ...record, state: 'cancelled' });
       setNotice('Pedido cancelado. Você pode devolver os produtos ao carrinho.');
     } catch (error) { setNotice(error instanceof Error ? error.message : 'Não foi possível cancelar. Tente novamente.'); }
