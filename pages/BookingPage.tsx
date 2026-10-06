@@ -74,15 +74,43 @@ export const BookingPage: React.FC = () => {
   useEffect(() => {
     if (!payment || status === 'confirmed' || status === 'expired') return;
     let active = true;
+    let checking = false;
+    let timer: number | undefined;
+    const controller = new AbortController();
     const poll = async () => {
+      if (!active || checking) return;
+      if (timer !== undefined) window.clearTimeout(timer);
+      checking = true;
+      const started = Date.now();
+      let terminal = false;
       try {
-        const r = await request({ action: 'status', reference: payment.reference });
-        if (active) setStatus(r.status);
-      } catch { /* Keep the Pix visible if status check temporarily fails. */ }
+        const response = await fetch(api, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'status', reference: payment.reference }),
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('Consulta indisponível');
+        const r = await response.json();
+        if (active) {
+          setStatus(r.status);
+          terminal = r.status === 'confirmed' || r.status === 'expired';
+        }
+      } catch { /* Never confirm without an authoritative server response. */ }
+      finally {
+        checking = false;
+        if (active && !terminal) timer = window.setTimeout(poll, Math.max(250, 2000 - (Date.now() - started)));
+      }
     };
+    const resume = () => { if (document.visibilityState === 'visible') void poll(); };
     void poll();
-    const timer = window.setInterval(poll, 5000);
-    return () => { active = false; window.clearInterval(timer); };
+    window.addEventListener('focus', resume);
+    document.addEventListener('visibilitychange', resume);
+    return () => {
+      active = false; controller.abort();
+      if (timer !== undefined) window.clearTimeout(timer);
+      window.removeEventListener('focus', resume);
+      document.removeEventListener('visibilitychange', resume);
+    };
   }, [payment, status]);
 
   const returnToServices = () => {
@@ -110,7 +138,7 @@ export const BookingPage: React.FC = () => {
         {status !== 'confirmed' && <div className="text-left"><button type="button" onClick={returnToServices} className="inline-flex items-center gap-2 rounded-xl border border-zinc-600 px-4 py-3 font-bold"><span aria-hidden="true">←</span> Voltar e escolher outro serviço</button><p className="mt-2 text-xs text-zinc-400">Se não quiser continuar, não pague este Pix. Voltar não cancela o código já gerado; ele vence em 30 minutos.</p></div>}
         {status === 'confirmed' ? <><h2 className="text-2xl text-emerald-400 font-bold">Agendamento confirmado!</h2><p>Seu pagamento foi aprovado. Guarde o código {payment.reference}.</p></> : status === 'expired' ? <><h2 className="text-xl font-bold">Reserva expirada</h2><p>O horário foi liberado. Se você pagou, entre em contato com a equipe e informe o código {payment.reference}.</p><button type="button" onClick={() => setPayment(null)} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Escolher outro horário</button></> : <>
           <h2 className="text-2xl font-bold text-amber-400">Pague R$ {payment.amount.toFixed(2).replace('.', ',')} por Pix</h2>
-          <p className="text-sm text-zinc-300">Aguardando confirmação do Mercado Pago. O Pix vence em 30 minutos.</p>
+          <p className="text-sm text-zinc-300">Aguardando confirmação do Mercado Pago. Já pagou? Não pague novamente: estamos verificando automaticamente. O Pix vence em 30 minutos.</p>
           {payment.qrCodeBase64 && <img className="mx-auto w-60 h-60 rounded-lg bg-white p-2" alt="QR Code Pix" src={`data:image/png;base64,${payment.qrCodeBase64}`} />}
           {payment.qrCode && <><textarea readOnly value={payment.qrCode} className="block w-full min-w-0 max-w-full h-24 rounded-xl bg-black p-3 text-xs text-zinc-200" aria-label="Código Pix copia e cola" /><button type="button" onClick={() => navigator.clipboard.writeText(payment.qrCode || '')} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Copiar código Pix</button></>}
           {payment.ticketUrl && <p><a href={payment.ticketUrl} target="_blank" rel="noopener noreferrer" className="underline text-amber-300">Abrir pagamento no Mercado Pago</a></p>}
