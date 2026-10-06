@@ -41,11 +41,6 @@ export const STATS: StatItem[] = [
     detail: 'Ray Black7 na arte e estética masculina',
   },
   {
-    value: '5+',
-    label: 'Anos de Experiência',
-    detail: 'Do barbeiro executor em cortes de precisão',
-  },
-  {
     value: '#1',
     label: 'Acabamento de Precisão',
     detail: 'Foco em cortes, acabamento e estilo masculino',
@@ -62,15 +57,6 @@ export const TEAM: TeamMember[] = [
     image: BARBER_PORTRAIT_IMG,
     description: 'Profissional apaixonado por transformação visual, estilo e autoestima. Fundador do Studio Black7, focado em entregar uma experiência de alto padrão.',
     instagram: '@rayblakc7',
-  },
-  {
-    id: 'barbeiro-executor',
-    name: 'Barbeiro Executor',
-    role: 'Barbeiro Profissional',
-    experience: '5 anos de experiência',
-    specialty: 'Cortes clássicos, degradê com precisão e alinhamento de barba',
-    image: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&w=800&q=80',
-    description: 'Com 5 anos de maestria e técnica em bancada, dedica-se à execução impecável de cortes, barbas alinhadas e acabamentos de alto nível.',
   },
 ];
 
