@@ -21,7 +21,7 @@ async function mpOrder(id: string) {
 }
 const paid = (order: any) => order?.status === 'processed' && order?.status_detail === 'accredited';
 const text = (value: unknown, max = 120) => String(value ?? '').trim().slice(0, max);
-const professionals = [{ id: 'ray-black7', name: 'Ray Black7' }, { id: 'barbeiro-executor', name: 'Barbeiro Executor' }];
+const professionals = [{ id: 'ray-black7', name: 'Ray Silva (Ray Black7)' }];
 type Window = { start: string; end: string; closed?: boolean };
 type Closure = { date: string; professionalId: string; start?: string; end?: string };
 type BookingSettings = { weekly: Record<string, Window[]>; closures: Closure[] };
@@ -68,7 +68,7 @@ function validateSettings(input: any): BookingSettings {
   if (!Array.isArray(input?.closures) || input.closures.length > 100) throw new Error('Lista de bloqueios inválida.');
   const closures = input.closures.map((c: any) => {
     const date = text(c?.date, 10), professionalId = text(c?.professionalId, 60);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(new Date(`${date}T12:00:00-03:00`).getTime()) || !['all', ...professionals.map(p => p.id)].includes(professionalId)) throw new Error('Data ou profissional do bloqueio inválido.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(new Date(`${date}T12:00:00-03:00`).getTime()) || !['all', 'barbeiro-executor', ...professionals.map(p => p.id)].includes(professionalId)) throw new Error('Data ou profissional do bloqueio inválido.');
     if (!c.start && !c.end) return { date, professionalId };
     if (!validTime(c.start) || !validTime(c.end) || timeNumber(c.start) >= timeNumber(c.end)) throw new Error('Intervalo de bloqueio inválido.');
     return { date, professionalId, start: c.start, end: c.end };
