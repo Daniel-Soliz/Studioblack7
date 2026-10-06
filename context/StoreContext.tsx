@@ -212,6 +212,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateOrderStatus = (orderId: string, status: Order['status'], paymentStatus?: Order['paymentStatus']) => {
     const res = StorageService.updateOrderStatus(orderId, status, paymentStatus);
+    if (res && status === 'cancelled') {
+      void CloudStoreService.save('products', StorageService.getProducts()).catch(error => console.error('Falha ao sincronizar estoque:', error));
+    }
     StorageService.logActivity('Status de Pedido Alterado', `Pedido ${orderId} atualizado para: ${status}.`);
     void CloudStoreService.save('orders', StorageService.getOrders()).catch((error) => console.error('Falha ao sincronizar pedidos:', error));
     refreshData();
