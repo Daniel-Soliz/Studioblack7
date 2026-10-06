@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Header, Footer, FloatingWhatsApp } from '../components';
 import { useStore } from '../context/StoreContext';
+import { BookingConfirmed, ConfirmedBooking } from '../components/BookingConfirmed';
 import { TEAM } from '../data/barbershop';
 
 const api = 'https://oyghjlwujdmgfkopujip.supabase.co/functions/v1/appointments';
@@ -32,7 +33,7 @@ export const BookingPage: React.FC = () => {
   const [closures, setClosures] = useState<{ start?: string; end?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [payment, setPayment] = useState<{ reference: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string; amount: number } | null>(() => {
+  const [payment, setPayment] = useState<{ reference: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string; amount: number; booking?: ConfirmedBooking } | null>(() => {
     try { if (params.get('servico')) return null; const saved = sessionStorage.getItem('sb7-booking-payment'); return saved ? JSON.parse(saved) : null; } catch { return null; }
   });
   const [status, setStatus] = useState('');
@@ -92,6 +93,11 @@ export const BookingPage: React.FC = () => {
         if (!response.ok) throw new Error('Consulta indisponível');
         const r = await response.json();
         if (active) {
+          if (r.service && r.professional && r.start) {
+            setPayment(current => current?.reference === payment.reference ? {
+              ...current, booking: { ...current.booking, service: r.service, professional: r.professional, start: r.start },
+            } : current);
+          }
           setStatus(r.status);
           terminal = r.status === 'confirmed' || r.status === 'expired';
         }
@@ -111,7 +117,7 @@ export const BookingPage: React.FC = () => {
       window.removeEventListener('focus', resume);
       document.removeEventListener('visibilitychange', resume);
     };
-  }, [payment, status]);
+  }, [payment?.reference, status]);
 
   const returnToServices = () => {
     setPayment(null); setStatus(''); setStep(1); setTime(''); setDate(''); setError('');
@@ -122,7 +128,12 @@ export const BookingPage: React.FC = () => {
     event.preventDefault(); if (step !== 3) return; setError(''); setLoading(true);
     try {
       const result = await request({ action: 'reserve', serviceId, professionalId, date, time, name, email, phone });
-      setPayment(result); setStatus('pending_payment');
+      setPayment({ ...result, booking: {
+        service: service?.name || '', professional: TEAM.find(p => p.id === professionalId)?.name || '',
+        start: new Date(date + 'T' + time + ':00-03:00').toISOString(),
+        end: new Date(Date.parse(date + 'T' + time + ':00-03:00') + minutes(service?.duration) * 60000).toISOString(),
+        customer: name.trim(),
+      } }); setStatus('pending_payment');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Falha ao reservar.');
       if (date) request({ action: 'availability', date, professionalId }).then(r => { setBusy(r.busy || []); setWindows(r.intervals || []); setClosures(r.closures || []); }).catch(() => {});
@@ -132,11 +143,11 @@ export const BookingPage: React.FC = () => {
   return <div className="min-h-screen min-w-0 bg-[#08080a] text-white"><Header />
     <main className="mx-auto w-full min-w-0 max-w-4xl px-4 pt-32 pb-20">
       <p className="text-amber-400 text-xs font-bold uppercase tracking-[.25em]">Studio Black7</p>
-      <h1 className="font-['Cinzel'] text-3xl sm:text-4xl font-black mt-2">Vamos marcar seu horário?</h1>
-      <p className="text-zinc-400 mt-3">São só 3 passos. Escolha o serviço, marque o horário e informe seus dados.</p>
+      <h1 className="font-['Cinzel'] text-3xl sm:text-4xl font-black mt-2">{status === 'confirmed' ? 'Seu momento Black7' : 'Vamos marcar seu horário?'}</h1>
+      <p className="text-zinc-400 mt-3">{status === 'confirmed' ? 'Todos os detalhes do seu atendimento em um só lugar.' : 'São só 3 passos. Escolha o serviço, marque o horário e informe seus dados.'}</p>
       {payment ? <section className="mt-8 w-full min-w-0 rounded-2xl border border-amber-400/40 bg-zinc-900 p-5 sm:p-8 text-center space-y-5">
         {status !== 'confirmed' && <div className="text-left"><button type="button" onClick={returnToServices} className="inline-flex items-center gap-2 rounded-xl border border-zinc-600 px-4 py-3 font-bold"><span aria-hidden="true">←</span> Voltar e escolher outro serviço</button><p className="mt-2 text-xs text-zinc-400">Se não quiser continuar, não pague este Pix. Voltar não cancela o código já gerado; ele vence em 30 minutos.</p></div>}
-        {status === 'confirmed' ? <><h2 className="text-2xl text-emerald-400 font-bold">Agendamento confirmado!</h2><p>Seu pagamento foi aprovado. Guarde o código {payment.reference}.</p></> : status === 'expired' ? <><h2 className="text-xl font-bold">Reserva expirada</h2><p>O horário foi liberado. Se você pagou, entre em contato com a equipe e informe o código {payment.reference}.</p><button type="button" onClick={() => setPayment(null)} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Escolher outro horário</button></> : <>
+        {status === 'confirmed' ? payment.booking ? <BookingConfirmed booking={payment.booking} reference={payment.reference} amount={payment.amount} onNewBooking={returnToServices} /> : <p role="status">Pagamento aprovado. Carregando os detalhes do agendamento...</p> : status === 'expired' ? <><h2 className="text-xl font-bold">Reserva expirada</h2><p>O horário foi liberado. Se você pagou, entre em contato com a equipe e informe o código {payment.reference}.</p><button type="button" onClick={() => setPayment(null)} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Escolher outro horário</button></> : <>
           <h2 className="text-2xl font-bold text-amber-400">Pague R$ {payment.amount.toFixed(2).replace('.', ',')} por Pix</h2>
           <p className="text-sm text-zinc-300">Aguardando confirmação do Mercado Pago. Já pagou? Não pague novamente: estamos verificando automaticamente. O Pix vence em 30 minutos.</p>
           {payment.qrCodeBase64 && <img className="mx-auto w-60 h-60 rounded-lg bg-white p-2" alt="QR Code Pix" src={`data:image/png;base64,${payment.qrCodeBase64}`} />}
