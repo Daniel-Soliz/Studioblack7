@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, Scissors, Sparkles, Clock3 } from 'lucide-react';
+import { ServicePhotoGallery } from './ServicePhotoGallery';
 import { useStore } from '../context/StoreContext';
 
 const realWorkImages = [
@@ -94,34 +95,7 @@ export const ServicesSection: React.FC = () => {
               key={service.id}
               className="relative rounded-2xl bg-zinc-900/60 border border-zinc-800/90 hover:border-amber-400/40 hover:bg-zinc-900/90 transition-all duration-300 flex flex-col overflow-hidden group shadow-lg"
             >
-              <div className="relative aspect-[16/10] overflow-hidden bg-black">
-                {service.image ? (
-                  <>
-                    {service.imageFit !== 'cover' && (
-                      <img src={service.image} alt="" aria-hidden="true"
-                        className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-40"
-                        loading="lazy"
-                      />
-                    )}
-                    <img
-                      src={service.image}
-                      alt={`Exemplo de ${service.name}`}
-                      className="relative w-full h-full"
-                      style={{ objectFit: service.imageFit || 'contain', objectPosition: `${service.imagePositionX ?? 50}% ${service.imagePositionY ?? 50}%` }}
-                      loading="lazy"
-                    />
-                  </>
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-zinc-500">
-                    <div className="w-12 h-12 rounded-2xl border border-amber-400/20 bg-amber-400/10 flex items-center justify-center">
-                      <Scissors className="w-6 h-6 text-amber-400" />
-                    </div>
-                    <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-zinc-500">
-                      Studio Black7
-                    </span>
-                  </div>
-                )}
-              </div>
+              <ServicePhotoGallery service={service} />
 
               <div className="p-6 flex flex-col justify-between flex-1">
                 <div className="space-y-3">
