@@ -32,9 +32,10 @@ export const BookingPage: React.FC = () => {
   const [closures, setClosures] = useState<{ start?: string; end?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [payment, setPayment] = useState<{ reference: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string; amount: number; booking?: ConfirmedBooking } | null>(() => {
+  const [payment, setPayment] = useState<{ reference: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string; amount: number; totalAmount?: number; remainingAmount?: number; booking?: ConfirmedBooking } | null>(() => {
     try { if (params.get('servico')) return null; const saved = sessionStorage.getItem('sb7-booking-payment'); return saved ? JSON.parse(saved) : null; } catch { return null; }
   });
+  const [paymentOption, setPaymentOption] = useState<'full' | 'half'>('full');
   const [status, setStatus] = useState('');
   const [name, setName] = useState(''), [email, setEmail] = useState(''), [phone, setPhone] = useState('');
   useEffect(() => {
@@ -94,7 +95,7 @@ export const BookingPage: React.FC = () => {
         if (active) {
           if (r.service && r.professional && r.start) {
             setPayment(current => current?.reference === payment.reference ? {
-              ...current, booking: { ...current.booking, service: r.service, professional: r.professional, start: r.start },
+              ...current, amount: r.amount ?? current.amount, totalAmount: r.totalAmount ?? current.totalAmount, remainingAmount: r.remainingAmount ?? current.remainingAmount, booking: { ...current.booking, service: r.service, professional: r.professional, start: r.start },
             } : current);
           }
           setStatus(r.status);
@@ -126,7 +127,7 @@ export const BookingPage: React.FC = () => {
   const reserve = async (event: React.FormEvent) => {
     event.preventDefault(); if (step !== 3) return; setError(''); setLoading(true);
     try {
-      const result = await request({ action: 'reserve', serviceId, professionalId, date, time, name, email, phone });
+      const result = await request({ action: 'reserve', serviceId, professionalId, date, time, name, email, phone, paymentOption });
       setPayment({ ...result, booking: {
         service: service?.name || '', professional: TEAM.find(p => p.id === professionalId)?.name || '',
         start: new Date(date + 'T' + time + ':00-03:00').toISOString(),
@@ -146,8 +147,9 @@ export const BookingPage: React.FC = () => {
       <p className="text-zinc-400 mt-3">{status === 'confirmed' ? 'Todos os detalhes do seu atendimento em um só lugar.' : 'São só 3 passos. Escolha o serviço, marque o horário e informe seus dados.'}</p>
       {payment ? <section className="mt-8 w-full min-w-0 rounded-2xl border border-amber-400/40 bg-zinc-900 p-5 sm:p-8 text-center space-y-5">
         {status !== 'confirmed' && <div className="text-left"><button type="button" onClick={returnToServices} className="inline-flex items-center gap-2 rounded-xl border border-zinc-600 px-4 py-3 font-bold"><span aria-hidden="true">←</span> Voltar e escolher outro serviço</button><p className="mt-2 text-xs text-zinc-400">Se não quiser continuar, não pague este Pix. Voltar não cancela o código já gerado; ele vence em 30 minutos.</p></div>}
-        {status === 'confirmed' ? payment.booking ? <BookingConfirmed booking={payment.booking} reference={payment.reference} amount={payment.amount} onNewBooking={returnToServices} /> : <p role="status">Pagamento aprovado. Carregando os detalhes do agendamento...</p> : status === 'expired' ? <><h2 className="text-xl font-bold">Reserva expirada</h2><p>O horário foi liberado. Se você pagou, entre em contato com a equipe e informe o código {payment.reference}.</p><button type="button" onClick={() => setPayment(null)} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Escolher outro horário</button></> : <>
+        {status === 'confirmed' ? payment.booking ? <BookingConfirmed booking={payment.booking} reference={payment.reference} amount={payment.amount} remainingAmount={payment.remainingAmount} onNewBooking={returnToServices} /> : <p role="status">Pagamento aprovado. Carregando os detalhes do agendamento...</p> : status === 'expired' ? <><h2 className="text-xl font-bold">Reserva expirada</h2><p>O horário foi liberado. Se você pagou, entre em contato com a equipe e informe o código {payment.reference}.</p><button type="button" onClick={() => setPayment(null)} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Escolher outro horário</button></> : <>
           <h2 className="text-2xl font-bold text-amber-400">Pague R$ {payment.amount.toFixed(2).replace('.', ',')} por Pix</h2>
+          {Boolean(payment.remainingAmount) && <p className="rounded-xl bg-amber-400/10 p-3 text-amber-200">Entrada de 50%. Restante de R$ {payment.remainingAmount!.toFixed(2).replace('.', ',')} para pagar no atendimento.</p>}
           <p className="text-sm text-zinc-300">Aguardando confirmação do Mercado Pago. Já pagou? Não pague novamente: estamos verificando automaticamente. O Pix vence em 30 minutos.</p>
           {payment.qrCodeBase64 && <img className="mx-auto w-60 h-60 rounded-lg bg-white p-2" alt="QR Code Pix" src={`data:image/png;base64,${payment.qrCodeBase64}`} />}
           {payment.qrCode && <><textarea readOnly value={payment.qrCode} className="block w-full min-w-0 max-w-full h-24 rounded-xl bg-black p-3 text-xs text-zinc-200" aria-label="Código Pix copia e cola" /><button type="button" onClick={() => navigator.clipboard.writeText(payment.qrCode || '')} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Copiar código Pix</button></>}
@@ -170,6 +172,12 @@ export const BookingPage: React.FC = () => {
           <label className="grid min-w-0 gap-2 font-semibold">Seu nome completo<input required autoComplete="name" placeholder="Digite seu nome completo" minLength={2} value={name} onChange={e => setName(e.target.value)} className="box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-4 text-base" /></label>
           <label className="grid min-w-0 gap-2 font-semibold">Seu telefone ou WhatsApp<input required autoComplete="tel" inputMode="tel" type="tel" placeholder="(11) 99999-9999" value={phone} onChange={e => setPhone(e.target.value)} className="box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-4 text-base" /></label>
           <label className="grid min-w-0 gap-2 font-semibold">E-mail para o pagamento Pix<input required autoComplete="email" type="email" placeholder="seuemail@exemplo.com" value={email} onChange={e => setEmail(e.target.value)} className="box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-4 text-base" /><span className="text-sm font-normal text-zinc-400">O Mercado Pago pede este dado para gerar o Pix.</span></label>
+          <fieldset className="space-y-3"><legend className="text-lg font-bold mb-3">Como você quer pagar?</legend><div className="grid gap-3 sm:grid-cols-2">{(['half', 'full'] as const).map(option => {
+            const total = Math.round(Number(service?.priceNumber || 0) * 100);
+            const cents = option === 'half' ? Math.ceil(total / 2) : total;
+            const unavailable = cents < 100;
+            return <label key={option} className={`flex gap-3 items-start rounded-xl border-2 p-4 ${unavailable ? 'opacity-40' : paymentOption === option ? 'border-amber-400 bg-amber-400/10' : 'border-zinc-700 bg-zinc-950'}`}><input type="radio" name="paymentOption" value={option} checked={paymentOption === option} disabled={unavailable || loading} onChange={() => setPaymentOption(option)} className="mt-1 accent-amber-400" /><span><strong className="block">{option === 'half' ? 'Pagar 50% agora' : 'Pagar valor completo'}</strong><span className="block mt-1 text-amber-300">R$ {(cents / 100).toFixed(2).replace('.', ',')}</span><span className="block mt-2 text-sm text-zinc-400">{unavailable ? 'Pix mínimo de R$ 1,00.' : option === 'half' ? 'Restante de R$ ' + ((total - cents) / 100).toFixed(2).replace('.', ',') + ' no atendimento.' : 'Tudo pago. Sem saldo restante.'}</span></span></label>;
+          })}</div></fieldset>
           <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 space-y-1"><strong className="block">Confira seu agendamento</strong><p>{service?.name} · {service?.price}</p><p>{date.split('-').reverse().join('/')} às {time}</p><p className="text-sm text-zinc-400">{TEAM.find(p => p.id === professionalId)?.name}</p></div>
         </section>}
         {error && <p role="alert" className="text-red-400 text-sm">{error}</p>}
