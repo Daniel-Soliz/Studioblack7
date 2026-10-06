@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Check, Scissors, Sparkles, ImagePlus, Loader2 } from 'lucide-react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useStore } from '../../context/StoreContext';
-import { ServiceItem } from '../../types';
+import { ServiceItem, ServicePhoto } from '../../types';
 import { CloudStoreService } from '../../services/cloudStoreService';
 
 export const AdminServicesPage: React.FC = () => {
@@ -19,6 +19,8 @@ export const AdminServicesPage: React.FC = () => {
   const [formDescription, setFormDescription] = useState('');
   const [formPopular, setFormPopular] = useState(false);
   const [formStatus, setFormStatus] = useState<'active' | 'inactive'>('active');
+  const [formPhotos, setFormPhotos] = useState<ServicePhoto[]>([]);
+  const [selectedPhoto, setSelectedPhoto] = useState(0);
   const [formImage, setFormImage] = useState('');
   const [formImageFit, setFormImageFit] = useState<'cover' | 'contain'>('contain');
   const [formImagePositionX, setFormImagePositionX] = useState(50);
@@ -42,6 +44,7 @@ export const AdminServicesPage: React.FC = () => {
     setFormDescription('');
     setFormPopular(false);
     setFormStatus('active');
+    setFormPhotos([]); setSelectedPhoto(0);
     setFormImage('');
     setFormImageFit('contain');
     setFormImagePositionX(50);
@@ -58,36 +61,49 @@ export const AdminServicesPage: React.FC = () => {
     setFormDescription(s.description || '');
     setFormPopular(s.popular || false);
     setFormStatus(s.status || 'active');
-    setFormImage(s.image || '');
-    setFormImageFit(s.imageFit || 'contain');
-    setFormImagePositionX(s.imagePositionX ?? 50);
-    setFormImagePositionY(s.imagePositionY ?? 50);
+    const photos = s.photos?.length ? s.photos : s.image ? [{ url: s.image, fit: s.imageFit, positionX: s.imagePositionX, positionY: s.imagePositionY }] : [];
+    setFormPhotos(photos); setSelectedPhoto(0);
+    loadPhoto(photos[0]);
   };
 
-  const handleImageUpload = async (file?: File) => {
-    if (!file) return;
-
-    setUploadingImage(true);
-    setFeedback('');
-
-    try {
-      const url = await CloudStoreService.uploadImageFromFile(file, 'services');
-      setFormImage(url);
-      setFormImageFit('contain');
-      setFormImagePositionX(50);
-      setFormImagePositionY(50);
-      setFeedback('Imagem enviada com sucesso. Agora salve o serviço para publicar.');
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : 'Não foi possível enviar a imagem.');
-    } finally {
-      setUploadingImage(false);
+  const loadPhoto = (photo?: ServicePhoto) => {
+    setFormImage(photo?.url || ''); setFormImageFit(photo?.fit || 'cover');
+    setFormImagePositionX(photo?.positionX ?? 50); setFormImagePositionY(photo?.positionY ?? 50);
+  };
+  const currentPhotos = () => formPhotos.map((photo, index) => index === selectedPhoto
+    ? { url: formImage, fit: formImageFit, positionX: formImagePositionX, positionY: formImagePositionY } : photo);
+  const choosePhoto = (index: number) => {
+    const photos = currentPhotos(); setFormPhotos(photos); setSelectedPhoto(index); loadPhoto(photos[index]);
+  };
+  const removePhoto = () => {
+    const photos = currentPhotos().filter((_, index) => index !== selectedPhoto);
+    const index = Math.max(0, Math.min(selectedPhoto, photos.length - 1));
+    setFormPhotos(photos); setSelectedPhoto(index); loadPhoto(photos[index]);
+  };
+  const handleImageUpload = async (files: File[]) => {
+    if (!files.length || uploadingImage) return;
+    setUploadingImage(true); setFeedback('');
+    const photos = currentPhotos();
+    let failed = '';
+    for (const file of files) {
+      try {
+        if (!file.type.startsWith('image/')) throw new Error('Selecione apenas imagens.');
+        const url = await CloudStoreService.uploadImageFromFile(file, 'services');
+        photos.push({ url, fit: 'cover', positionX: 50, positionY: 50 });
+      } catch (error) { failed = error instanceof Error ? error.message : 'Falha ao enviar uma foto.'; }
     }
+    setFormPhotos(photos);
+    const index = Math.max(0, photos.length - 1); setSelectedPhoto(index); loadPhoto(photos[index]);
+    setUploadingImage(false);
+    setFeedback(failed ? 'Algumas fotos não foram enviadas: ' + failed + ' As demais foram mantidas; salve o serviço.' : 'Fotos adicionadas. Salve o serviço para publicar a galeria.');
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim() || uploadingImage) return;
 
+    const photos = currentPhotos();
+    const cover = photos[0];
     const numPrice = parseFloat(formPrice.replace(/[^\d,.]/g, '').replace(',', '.')) || 0;
 
     if (isCreating) {
@@ -101,10 +117,11 @@ export const AdminServicesPage: React.FC = () => {
         description: formDescription.trim(),
         popular: formPopular,
         status: formStatus,
-        image: formImage || undefined,
-        imageFit: formImageFit,
-        imagePositionX: formImagePositionX,
-        imagePositionY: formImagePositionY,
+        image: cover?.url,
+        photos,
+        imageFit: cover?.fit || 'cover',
+        imagePositionX: cover?.positionX ?? 50,
+        imagePositionY: cover?.positionY ?? 50,
         order: services.length + 1
       };
       saveServices([...services, newService]);
@@ -122,10 +139,11 @@ export const AdminServicesPage: React.FC = () => {
               description: formDescription.trim(),
               popular: formPopular,
               status: formStatus,
-              image: formImage || undefined,
-              imageFit: formImageFit,
-              imagePositionX: formImagePositionX,
-              imagePositionY: formImagePositionY
+              image: cover?.url,
+        photos,
+              imageFit: cover?.fit || 'cover',
+              imagePositionX: cover?.positionX ?? 50,
+              imagePositionY: cover?.positionY ?? 50
             }
           : s
       );
@@ -151,7 +169,7 @@ export const AdminServicesPage: React.FC = () => {
           <div>
             <h2 className="text-base font-bold text-white">Tabela de Serviços ({services.length})</h2>
             <p className="text-xs text-zinc-400">
-              Edite preço, nome, descrição e adicione uma foto real do trabalho para o cliente visualizar.
+              Edite preço, nome, descrição e adicione várias fotos reais do trabalho para o cliente visualizar.
             </p>
           </div>
 
@@ -270,8 +288,10 @@ export const AdminServicesPage: React.FC = () => {
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-bold text-zinc-300 uppercase mb-1.5">
-                    Foto do trabalho
+                    Fotos do trabalho ({formPhotos.length})
                   </label>
+                  <p className="mb-3 text-xs text-zinc-400">Adicione várias imagens. Toque em uma miniatura para ajustar seu enquadramento. A primeira foto é a capa.</p>
+                  <div className="mb-3 grid grid-cols-3 gap-2">{formPhotos.map((photo, index) => <button type="button" key={photo.url + index} disabled={uploadingImage} onClick={() => choosePhoto(index)} aria-pressed={selectedPhoto === index} aria-label={'Editar foto ' + (index + 1)} className={'relative aspect-square overflow-hidden rounded-lg border-2 ' + (selectedPhoto === index ? 'border-amber-400' : 'border-zinc-700')}><img src={photo.url} alt={'Foto ' + (index + 1)} className="h-full w-full object-cover" /><span className="absolute bottom-0 left-0 bg-black/70 px-2 text-xs text-white">{index === 0 ? 'Capa' : index + 1}</span></button>)}</div>
                   <div className="rounded-2xl border border-zinc-800 bg-black/40 overflow-hidden">
                     <div className="relative aspect-[16/10] bg-black/60 flex items-center justify-center overflow-hidden">
                       {formImage ? (
@@ -318,12 +338,13 @@ export const AdminServicesPage: React.FC = () => {
                     <div className="p-3 flex flex-wrap gap-2">
                       <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-800 border border-zinc-700 text-xs font-bold text-white cursor-pointer hover:border-amber-400/50">
                         {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4 text-amber-400" />}
-                        <span>{uploadingImage ? 'Enviando...' : formImage ? 'Trocar foto' : 'Adicionar foto'}</span>
+                        <span>{uploadingImage ? 'Enviando...' : 'Adicionar fotos'}</span>
                         <input
                           type="file"
                           accept="image/*"
+                          multiple
                           disabled={uploadingImage}
-                          onChange={(e) => void handleImageUpload(e.target.files?.[0])}
+                          onChange={(e) => { const files = Array.from(e.target.files || []); e.target.value = ''; void handleImageUpload(files); }}
                           className="hidden"
                         />
                       </label>
@@ -331,10 +352,11 @@ export const AdminServicesPage: React.FC = () => {
                       {formImage && (
                         <button
                           type="button"
-                          onClick={() => setFormImage('')}
+                          disabled={uploadingImage}
+                          onClick={removePhoto}
                           className="px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-bold"
                         >
-                          Remover foto
+                          Remover esta foto
                         </button>
                       )}
                     </div>
@@ -439,6 +461,7 @@ export const AdminServicesPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3 pt-3">
                 <button
                   type="button"
+                  disabled={uploadingImage}
                   onClick={() => {
                     setEditingService(null);
                     setIsCreating(false);
