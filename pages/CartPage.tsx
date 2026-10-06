@@ -1,4 +1,5 @@
 import React from 'react';
+import { SavedStoreOrders } from '../components/SavedStoreOrders';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShoppingBag, 
@@ -35,6 +36,7 @@ export const CartPage: React.FC = () => {
   if (cart.length === 0) {
     return (
       <div className="pt-36 pb-28 min-h-screen bg-[#08080a] text-center px-4">
+        <SavedStoreOrders />
         <div className="max-w-md mx-auto p-10 rounded-3xl bg-zinc-900 border border-zinc-800 space-y-6 shadow-2xl">
           <div className="w-16 h-16 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center mx-auto text-zinc-400">
             <ShoppingBag className="w-8 h-8" />
@@ -65,6 +67,7 @@ export const CartPage: React.FC = () => {
       <main className="flex-grow pt-28 pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
+          <SavedStoreOrders />
           {/* Top Navigation Bar */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 border-b border-zinc-800/80">
             <Link
