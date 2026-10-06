@@ -649,6 +649,17 @@ export class StorageService {
     const orders = this.getOrders();
     const index = orders.findIndex(o => o.id === orderId);
     if (index >= 0) {
+      if (status === 'cancelled' && orders[index].status !== 'cancelled' && orders[index].paymentStatus !== 'paid') {
+        const products = this.getProducts();
+        for (const item of orders[index].items) {
+          const product = products.find(p => p.id === item.productId);
+          if (product) {
+            product.stock += item.quantity;
+            if (product.status === 'out_of_stock' && product.stock > 0) product.status = 'active';
+          }
+        }
+        this.saveProducts(products);
+      }
       orders[index].status = status;
       if (paymentStatus) orders[index].paymentStatus = paymentStatus;
       orders[index].updatedAt = new Date().toISOString();
