@@ -27,7 +27,7 @@ export function bookingCalendar(booking: ConfirmedBooking, reference: string) {
   }).join('\r\n') + '\r\n';
 }
 
-export const BookingConfirmed: React.FC<{ booking: ConfirmedBooking; reference: string; amount: number; onNewBooking: () => void }> = ({ booking, reference, amount, onNewBooking }) => {
+export const BookingConfirmed: React.FC<{ booking: ConfirmedBooking; reference: string; amount: number; remainingAmount?: number; onNewBooking: () => void }> = ({ booking, reference, amount, remainingAmount = 0, onNewBooking }) => {
   const { settings } = useStore();
   const [now, setNow] = useState(Date.now());
   const [calendarSaved, setCalendarSaved] = useState(false);
@@ -60,7 +60,7 @@ export const BookingConfirmed: React.FC<{ booking: ConfirmedBooking; reference: 
       <dl className="grid gap-4 sm:grid-cols-2"><div><dt className="flex gap-2 text-sm text-zinc-400"><CalendarDays size={17} /> Dia</dt><dd className="mt-1 font-semibold capitalize">{date}</dd></div>
         <div><dt className="flex gap-2 text-sm text-zinc-400"><Clock size={17} /> Horário de São Paulo</dt><dd className="mt-1 text-3xl font-bold">{time}</dd><dd className="mt-2 text-sm font-semibold text-amber-300">Chegue 10 minutos antes do seu corte.</dd></div>
         <div><dt className="text-sm text-zinc-400">Seu profissional</dt><dd className="mt-1 font-semibold">{booking.professional}</dd></div>
-        <div><dt className="text-sm text-zinc-400">Valor pago por Pix</dt><dd className="mt-1 font-semibold text-emerald-300">{amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</dd></div></dl>
+        <div><dt className="text-sm text-zinc-400">Valor pago por Pix</dt><dd className="mt-1 font-semibold text-emerald-300">{amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</dd></div><div><dt className="text-sm text-zinc-400">Restante no atendimento</dt><dd className="mt-1 font-semibold text-amber-300">{remainingAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}{remainingAmount === 0 && ' · Tudo pago'}</dd></div></dl>
       <div className="border-t border-zinc-800 pt-4"><p className="flex items-center gap-2 text-sm text-zinc-400"><MapPin size={17} /> Onde será o atendimento</p><p className="mt-1">{ADDRESS.full}</p><a href={ADDRESS.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-amber-300 underline">Ver como chegar</a></div>
     </div>
     <a href={'https://wa.me/' + contact + '?text=' + encodeURIComponent(message)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-4 font-bold text-black"><MessageCircle size={21} /> Falar com o cabeleireiro no WhatsApp</a>
