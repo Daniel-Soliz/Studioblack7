@@ -242,6 +242,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const createOrder = (orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'>) => {
     const newOrd = StorageService.createOrder(orderData);
+    void CloudStoreService.save('products', StorageService.getProducts()).catch(error => console.error('Falha ao sincronizar estoque:', error));
     StorageService.logActivity('Novo Pedido Recebido', `Pedido #${newOrd.orderNumber} - R$ ${newOrd.total.toFixed(2)}.`);
     void CloudStoreService.save('orders', StorageService.getOrders()).catch((error) => console.error('Falha ao sincronizar pedidos:', error));
     refreshData();
