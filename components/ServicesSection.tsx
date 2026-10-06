@@ -8,10 +8,12 @@ const realWorkImages = [
   { src: `${import.meta.env.BASE_URL}services/studio-black7-work-2-revised-20260925.webp`, alt: 'Degradê e cachos masculinos - Studio Black7' },
   { src: `${import.meta.env.BASE_URL}services/studio-black7-work-3-20260925.webp`, alt: 'Corte masculino com degradê e acabamento - Studio Black7' },
   { src: `${import.meta.env.BASE_URL}services/studio-black7-work-4-shirt-20260925.webp`, alt: 'Corte masculino em perfil lateral - Studio Black7' }
+  , ...[5, 6, 7, 8, 9, 10, 11, 12].map(number => ({ src: `${import.meta.env.BASE_URL}services/black7-work-${number}.webp`, alt: `Trabalho realizado no Studio Black7 - foto ${number}` }))
 ];
 
 export const ServicesSection: React.FC = () => {
   const { services, settings } = useStore();
+  const [carouselPaused, setCarouselPaused] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
 
   const categories = ['Todos', 'Cortes', 'Barba', 'Penteado / Acabamento', 'Química / Alisamento', 'Coloração'];
@@ -196,25 +198,38 @@ export const ServicesSection: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 -mx-2 sm:mx-0">
-            {realWorkImages.map((image, index) => (
-              <div
-                key={image.src}
-                className="group relative aspect-[4/5] overflow-hidden rounded-xl sm:rounded-2xl shadow-lg"
-              >
-                <img
-                  src={image.src}
-                  alt={image.alt}
-                  className="absolute inset-0 w-full h-full object-cover object-center scale-[1.06]"
-                  loading="lazy"
-                />
-                <div className="absolute left-2 bottom-2 rounded-md bg-black/60 px-2 py-1">
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-white/90">
-                    Trabalho #{index + 1}
-                  </span>
+          <style>{`
+            @keyframes black7-work-loop { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+            .black7-work-viewport { overflow: hidden; width: 100%; }
+            .black7-work-track { display: flex; width: max-content; animation: black7-work-loop 96s linear infinite; }
+            .black7-work-group { display: flex; flex-shrink: 0; gap: 16px; padding-right: 16px; }
+            .black7-work-card { width: clamp(180px, 24vw, 280px); flex-shrink: 0; }
+            @media (prefers-reduced-motion: reduce) {
+              .black7-work-viewport { overflow-x: auto; }
+              .black7-work-track { animation: none; }
+              .black7-work-group[data-copy="true"] { display: none; }
+            }
+          `}</style>
+          <div className="black7-work-viewport rounded-2xl" role="region" aria-label="Fotos dos resultados Studio Black7">
+            <div className="black7-work-track" style={{ animationPlayState: carouselPaused ? 'paused' : 'running' }}>
+              {[false, true].map(copy => (
+                <div key={String(copy)} className="black7-work-group" data-copy={String(copy)} aria-hidden={copy || undefined}>
+                  {realWorkImages.map((image, index) => (
+                    <div key={image.src} className="black7-work-card relative aspect-[4/5] overflow-hidden rounded-xl sm:rounded-2xl">
+                      <img src={image.src} alt={copy ? '' : image.alt} className="absolute inset-0 w-full h-full object-cover object-center" loading="eager" decoding="async" />
+                      <div className="absolute left-2 bottom-2 rounded-md bg-black/60 px-2 py-1">
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-white/90">Trabalho #{index + 1}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+          <div className="mt-4 text-center">
+            <button type="button" onClick={() => setCarouselPaused(value => !value)} aria-pressed={carouselPaused} className="rounded-lg border border-amber-400/40 px-4 py-2 text-sm font-semibold text-amber-300">
+              {carouselPaused ? 'Continuar fotos' : 'Pausar fotos'}
+            </button>
           </div>
         </div>
 
