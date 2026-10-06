@@ -457,91 +457,8 @@ export const INITIAL_SETTINGS: SiteSettings = {
   adminPasswordHash: '067462d6fd87e8dcb22d7130736e6b2036021692166785531d2ca1f486aed709'
 };
 
-// INITIAL DEMO ORDERS
-const INITIAL_ORDERS: Order[] = [
-  {
-    id: 'ord-1001',
-    orderNumber: 'SB7-1001',
-    customer: {
-      name: 'Marcos Vinicius Santos',
-      email: 'marcos.santos@email.com',
-      phone: '(11) 97123-4567',
-      address: {
-        street: 'Rua Imirim',
-        number: '1250',
-        neighborhood: 'Imirim',
-        city: 'São Paulo',
-        state: 'SP',
-        zipCode: '02464-000'
-      }
-    },
-    items: [
-      {
-        productId: 'pomada-matte-black7',
-        productName: 'Pomada Matte Studio Black7',
-        price: 42.90,
-        quantity: 2,
-        image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
-        sku: 'SB7-POM-01'
-      },
-      {
-        productId: 'oleo-barba-black7-gold',
-        productName: 'Óleo para Barba Black7 Gold',
-        price: 48.00,
-        quantity: 1,
-        image: 'https://images.unsplash.com/photo-1608248597359-009138404a55?auto=format&fit=crop&w=800&q=80',
-        sku: 'SB7-OIL-02'
-      }
-    ],
-    subtotal: 133.80,
-    shipping: 0,
-    shippingMethod: 'Retirada no Studio Black7 (Gratuita)',
-    total: 133.80,
-    status: 'confirmed',
-    paymentStatus: 'paid',
-    paymentMethod: 'Pix no Balcão / WhatsApp',
-    notes: 'Cliente irá retirar na barbearia no sábado.',
-    createdAt: new Date(Date.now() - 3600 * 1000 * 48).toISOString(),
-    updatedAt: new Date(Date.now() - 3600 * 1000 * 24).toISOString()
-  },
-  {
-    id: 'ord-1002',
-    orderNumber: 'SB7-1002',
-    customer: {
-      name: 'Gabriel Ribeiro da Costa',
-      email: 'gabriel.costa@email.com',
-      phone: '(11) 98845-9012',
-      address: {
-        street: 'Av. Direitos Humanos',
-        number: '410',
-        complement: 'Apto 32',
-        neighborhood: 'Mandaqui',
-        city: 'São Paulo',
-        state: 'SP',
-        zipCode: '02475-000'
-      }
-    },
-    items: [
-      {
-        productId: 'kit-black7-executive',
-        productName: 'Kit Black7 Executive Grooming',
-        price: 99.90,
-        quantity: 1,
-        image: 'https://images.unsplash.com/photo-1621607512214-68297480165e?auto=format&fit=crop&w=800&q=80',
-        sku: 'SB7-KIT-06'
-      }
-    ],
-    subtotal: 99.90,
-    shipping: 15.00,
-    shippingMethod: 'Entrega Expressa Zona Norte',
-    total: 114.90,
-    status: 'processing',
-    paymentStatus: 'pending',
-    paymentMethod: 'A combinar no WhatsApp',
-    createdAt: new Date(Date.now() - 3600 * 1000 * 6).toISOString(),
-    updatedAt: new Date(Date.now() - 3600 * 1000 * 2).toISOString()
-  }
-];
+// Known demonstration records must never appear in production.
+const DEMO_ORDER_IDS = new Set(['ord-1001', 'ord-1002']);
 
 export class StorageService {
   private static getItem<T>(key: string, fallback: T): T {
@@ -674,18 +591,17 @@ export class StorageService {
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.ORDERS);
       if (raw === null) {
-        this.setItem(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
-        return INITIAL_ORDERS;
+        return [];
       }
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? parsed.filter((order: Order) => !DEMO_ORDER_IDS.has(order.id)) : [];
     } catch {
       return [];
     }
   }
 
   static saveOrders(orders: Order[]): void {
-    this.setItem(STORAGE_KEYS.ORDERS, orders);
+    this.setItem(STORAGE_KEYS.ORDERS, orders.filter(order => !DEMO_ORDER_IDS.has(order.id)));
   }
 
   static createOrder(orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'>): Order {
@@ -930,7 +846,7 @@ export class StorageService {
     this.setItem(STORAGE_KEYS.GALLERY, INITIAL_GALLERY);
     this.setItem(STORAGE_KEYS.CONTENT, INITIAL_CONTENT);
     this.setItem(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
-    this.setItem(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
+    this.setItem(STORAGE_KEYS.ORDERS, []);
     this.logActivity('Restauração de Fábrica', 'Todos os dados foram redefinidos para os padrões de fábrica.');
   }
 }
