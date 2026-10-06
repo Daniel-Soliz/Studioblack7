@@ -15,6 +15,8 @@ import { useStore } from '../context/StoreContext';
 import { PaymentService, PixPaymentResult } from '../services/paymentService';
 import { WHATSAPP_RAW } from '../data/barbershop';
 import { Order } from '../types';
+import { SavedStoreOrders } from '../components/SavedStoreOrders';
+import { readStorePayments, rememberStorePayment } from '../services/savedStorePayments';
 import { Header, Footer } from '../components';
 
 const buildPaidWhatsAppUrl = (order: Order) => {
@@ -46,6 +48,11 @@ export const CheckoutPage: React.FC = () => {
   const { createOrder, updateOrderStatus } = useStore();
   const navigate = useNavigate();
 
+  const [restored] = useState(() => {
+    const id = new URLSearchParams(window.location.search).get('pedido');
+    return readStorePayments().find(record => record.order.id === id) || null;
+  });
+
   // Customer Form State
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -63,14 +70,17 @@ export const CheckoutPage: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
-  const [pixPayment, setPixPayment] = useState<PixPaymentResult | null>(null);
+  const [completedOrder, setCompletedOrder] = useState<Order | null>(restored?.order || null);
+  const [pixPayment, setPixPayment] = useState<PixPaymentResult | null>(restored?.pix || null);
   const [pixCopied, setPixCopied] = useState(false);
   const [paymentStatusMessage, setPaymentStatusMessage] = useState('Aguardando pagamento...');
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [paymentClosed, setPaymentClosed] = useState(restored?.state === 'expired' || restored?.state === 'cancelled');
+  const [paymentChecking, setPaymentChecking] = useState(!!restored);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
-    if (!completedOrder || !pixPayment?.orderId || paymentConfirmed) return;
+    if (!completedOrder || !pixPayment?.orderId || paymentConfirmed || paymentClosed) { setPaymentChecking(false); return; }
 
     let active = true;
     let checking = false;
@@ -85,15 +95,23 @@ export const CheckoutPage: React.FC = () => {
 
         if (result.paid) {
           setPaymentConfirmed(true);
-          setPaymentStatusMessage('Pagamento confirmado. Abrindo WhatsApp...');
+          setPaymentChecking(false);
+          setPaymentStatusMessage('Pagamento confirmado.');
+          rememberStorePayment({ order: { ...completedOrder, status: 'confirmed', paymentStatus: 'paid' }, pix: pixPayment, state: 'paid' });
           updateOrderStatus(completedOrder.id, 'confirmed', 'paid');
 
-          window.setTimeout(() => {
-            window.location.assign(buildPaidWhatsAppUrl(completedOrder));
-          }, 900);
+
           return;
         }
 
+        setPaymentChecking(false);
+        if (result.closed) {
+          setPaymentClosed(true);
+          setPaymentStatusMessage('Este Pix encerrou. Você pode voltar os produtos ao carrinho.');
+          rememberStorePayment({ order: completedOrder, pix: pixPayment, state: 'expired' });
+          updateOrderStatus(completedOrder.id, 'cancelled', 'pending');
+          return;
+        }
         setPaymentStatusMessage('Aguardando confirmação do pagamento...');
       } catch {
         if (active) setPaymentStatusMessage('Pagamento ainda não confirmado. Vamos verificar novamente.');
@@ -115,11 +133,10 @@ export const CheckoutPage: React.FC = () => {
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [completedOrder, pixPayment?.orderId, paymentConfirmed, updateOrderStatus]);
+  }, [completedOrder?.id, pixPayment?.orderId, paymentConfirmed, paymentClosed]);
 
   if (cart.length === 0 && !completedOrder) {
-    navigate('/carrinho');
-    return null;
+    return <div className="pt-36 pb-24 px-4 min-h-screen bg-[#08080a]"><SavedStoreOrders /><Link to="/loja" className="block text-center text-amber-400">Voltar à loja</Link></div>;
   }
 
   const handleCepChange = async (rawValue: string) => {
@@ -227,6 +244,7 @@ export const CheckoutPage: React.FC = () => {
         notes: [notes, `Mercado Pago Order: ${pix.orderId}`, `Payment: ${pix.paymentId}`].filter(Boolean).join(' | ')
       });
 
+      rememberStorePayment({ order: newOrder, pix, state: 'pending' });
       setPixPayment(pix);
       setCompletedOrder(newOrder);
       clearCart();
@@ -235,6 +253,18 @@ export const CheckoutPage: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const cancelCurrentOrder = async () => {
+    if (!completedOrder || !pixPayment || cancelling) return;
+    setCancelling(true); setErrorMessage('');
+    try {
+      await PaymentService.cancelStorePayment(pixPayment.orderId);
+      updateOrderStatus(completedOrder.id, 'cancelled', 'pending');
+      rememberStorePayment({ order: completedOrder, pix: pixPayment, state: 'cancelled' });
+      navigate('/carrinho');
+    } catch (error) { setErrorMessage(error instanceof Error ? error.message : 'Não foi possível cancelar.'); }
+    finally { setCancelling(false); }
   };
 
   const copyPixCode = async () => {
@@ -255,7 +285,7 @@ export const CheckoutPage: React.FC = () => {
               <CheckCircle2 className="w-9 h-9" />
             </div>
             <h1 className="font-['Cinzel'] text-2xl sm:text-3xl font-black text-white">
-              Pedido Realizado com Sucesso!
+              {paymentConfirmed ? 'Pedido confirmado!' : paymentClosed ? 'Pix encerrado' : 'Seu pedido aguarda pagamento'}
             </h1>
             <p className="text-sm text-zinc-300">
               Seu pedido foi registrado no sistema do Studio Black7 sob o número:
@@ -266,7 +296,7 @@ export const CheckoutPage: React.FC = () => {
           </div>
 
           {/* Mercado Pago Pix */}
-          {pixPayment && (
+          {pixPayment && !paymentConfirmed && !paymentClosed && !paymentChecking && (
             <div className="p-5 rounded-2xl bg-black/60 border border-amber-400/30 space-y-4 text-center">
               <div className="flex items-center justify-center gap-2 text-amber-400 font-black">
                 <QrCode className="w-5 h-5" />
@@ -318,12 +348,12 @@ export const CheckoutPage: React.FC = () => {
               }`}>
                 {paymentStatusMessage}
               </div>
-              <p className="text-[11px] text-zinc-500">
-                O WhatsApp só será aberto depois que o Mercado Pago confirmar o pagamento.
-              </p>
+
             </div>
           )}
 
+          {paymentChecking && <p role="status" className="text-amber-300 text-center">Conferindo seu pagamento no Mercado Pago…</p>}
+          {paymentClosed && <><p className="text-amber-300 text-center">Este Pix não está mais disponível. Escolha seu pedido abaixo para voltar os produtos ao carrinho.</p><SavedStoreOrders /></>}
           {/* Order Details Card */}
           <div className="p-5 rounded-2xl bg-black/50 border border-zinc-800 space-y-4 text-xs">
             <div className="flex justify-between font-bold text-white border-b border-zinc-800 pb-2">
@@ -338,8 +368,8 @@ export const CheckoutPage: React.FC = () => {
               <span className="font-bold text-zinc-400 block">Itens:</span>
               {completedOrder.items.map((it, idx) => (
                 <div key={idx} className="flex justify-between text-zinc-300">
-                  <span>{it.quantity}x {it.name}</span>
-                  <span className="font-mono">R$ {it.totalPrice.toFixed(2).replace('.', ',')}</span>
+                  <span className="flex items-center gap-2 min-w-0">{it.image && <img src={it.image} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />}<span className="break-words">{it.quantity}x {it.name || it.productName}</span></span>
+                  <span className="font-mono">R$ {(it.totalPrice ?? (it.unitPrice ?? it.price ?? 0) * it.quantity).toFixed(2).replace('.', ',')}</span>
                 </div>
               ))}
             </div>
@@ -354,15 +384,19 @@ export const CheckoutPage: React.FC = () => {
           <div className="space-y-3">
             <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 text-center">
               <p className="text-sm font-bold text-white">
-                {paymentConfirmed ? 'Pagamento confirmado.' : 'Finalize o Pix para concluir o pedido.'}
+                {paymentConfirmed ? 'Pagamento confirmado.' : paymentClosed ? 'Pix encerrado.' : 'Finalize o Pix para concluir o pedido.'}
               </p>
               <p className="text-xs text-zinc-400 mt-1">
                 {paymentConfirmed
-                  ? 'Você será direcionado automaticamente para o WhatsApp.'
-                  : 'Sem confirmação do Mercado Pago, nenhum acesso ao WhatsApp é liberado nesta etapa.'}
+                  ? 'Confira os detalhes e fale com o Studio quando quiser.'
+                  : 'Seu pedido está salvo neste celular. Volte ao carrinho para continuar depois.'}
               </p>
             </div>
 
+            {errorMessage && <p role="alert" className="text-red-300 text-sm">{errorMessage}</p>}
+            {!paymentConfirmed && !paymentClosed && <button onClick={() => void cancelCurrentOrder()} disabled={cancelling || paymentChecking} className="w-full py-3 rounded-xl border border-red-400/40 text-red-300 disabled:opacity-50">{cancelling ? 'Cancelando…' : 'Cancelar pedido'}</button>}
+            {paymentConfirmed && <a href={buildPaidWhatsAppUrl(completedOrder)} target="_blank" rel="noopener noreferrer" className="block w-full py-3 rounded-xl bg-emerald-600 text-center text-white font-bold">Falar com o Studio no WhatsApp</a>}
+            <Link to="/carrinho" className="block text-center text-amber-400 py-2">Meus pedidos e carrinho</Link>
             <Link
               to="/loja"
               className="w-full py-3.5 px-6 rounded-xl bg-zinc-800 hover:bg-zinc-750 text-zinc-200 text-xs font-bold uppercase tracking-wider text-center block transition-colors"
