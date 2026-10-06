@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, error: "Apenas pagamentos da loja estão habilitados." }, 400);
   }
 
-  if (body?.action === "check_status") {
+  if (body?.action === "check_status" || body?.action === "cancel_order") {
     const orderId = cleanText(body?.orderId, 80);
     if (!/^ORD[A-Z0-9]+$/i.test(orderId)) {
       return json({ ok: false, error: "Order ID inválido." }, 400);
@@ -116,8 +116,26 @@ Deno.serve(async (req: Request) => {
     const statusDetail = String(mp.result?.status_detail || "");
     const paid = status === "processed" && statusDetail === "accredited";
 
+    const closed = ["expired", "cancelled", "canceled", "failed"].includes(status);
+    if (body.action === "cancel_order") {
+      if (paid || status === "processed") return json({ ok: false, error: "O pagamento já foi aprovado. Entre em contato com o Studio para solicitar cancelamento." }, 409);
+      if (!closed) {
+        const cancellation = await fetch(`https://api.mercadopago.com/v1/orders/${encodeURIComponent(orderId)}/cancel`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}`, "Content-Type": "application/json", "X-Idempotency-Key": `cancel-${orderId}` }
+        });
+        if (!cancellation.ok) {
+          const latest = await getMercadoPagoOrder(orderId);
+          if (!latest.ok || !["expired", "cancelled", "canceled"].includes(latest.result?.status)) {
+            return json({ ok: false, error: "Não foi possível cancelar o Pix. Confira se ele já foi pago e tente novamente." }, 409);
+          }
+        }
+      }
+      return json({ ok: true, cancelled: true, orderId });
+    }
     return json({
       ok: true,
+      closed,
       orderId,
       status,
       statusDetail,
@@ -200,6 +218,7 @@ Deno.serve(async (req: Request) => {
       payments: [
         {
           amount: amount.toFixed(2),
+          expiration_time: "PT30M",
           payment_method: {
             id: "pix",
             type: "bank_transfer",
