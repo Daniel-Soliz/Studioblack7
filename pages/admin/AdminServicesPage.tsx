@@ -344,7 +344,7 @@ export const AdminServicesPage: React.FC = () => {
                           accept="image/*"
                           multiple
                           disabled={uploadingImage}
-                          onChange={(e) => { const files = Array.from(e.target.files || []); e.target.value = ''; void handleImageUpload(files); }}
+                          onChange={(e) => { const files = Array.from(e.currentTarget.files || []) as File[]; e.target.value = ''; void handleImageUpload(files); }}
                           className="hidden"
                         />
                       </label>
