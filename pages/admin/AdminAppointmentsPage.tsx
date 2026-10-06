@@ -39,6 +39,7 @@ export const AdminAppointmentsPage: React.FC = () => {
     finally { setLoading(false); }
   }, [call, session?.token]);
   useEffect(() => { void refresh(); }, [refresh]);
+  const confirmedRows = rows.filter(row => row.status === 'confirmed');
   const change = async (id: string, status: string) => {
     if (!window.confirm(status === 'cancelled' ? 'Cancelar este agendamento? Um pagamento já realizado não será estornado automaticamente.' : 'Marcar atendimento como concluído?')) return;
     try { await call('admin_update', { id, status }); await refresh(); }
@@ -98,7 +99,7 @@ export const AdminAppointmentsPage: React.FC = () => {
       </div>)}</div><p className="text-sm text-zinc-400">Clique em Salvar meus horários após editar ou abrir/fechar um dia. Os horários ficam guardados mesmo com o dia fechado.</p></>}
       {tab === 'folgas' && <div className="border-t border-zinc-800 pt-5 space-y-3"><h3 className="font-bold">Marcar uma folga</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0"><label className="grid min-w-0 gap-2 text-base font-semibold">Data<input type="date" value={blockDate} onChange={e => setBlockDate(e.target.value)} className="w-full min-w-0 rounded-xl border border-zinc-700 bg-zinc-950 p-3" /></label>
-        <label className="grid min-w-0 gap-2 text-base font-semibold">Profissional<select value={blockProfessional} onChange={e => setBlockProfessional(e.target.value)} className="w-full min-w-0 rounded-xl border border-zinc-700 bg-zinc-950 p-3"><option value="all">Todos</option><option value="ray-black7">Ray Black7</option><option value="barbeiro-executor">Barbeiro Executor</option></select></label>
+        <label className="grid min-w-0 gap-2 text-base font-semibold">Profissional<select value={blockProfessional} onChange={e => setBlockProfessional(e.target.value)} className="w-full min-w-0 rounded-xl border border-zinc-700 bg-zinc-950 p-3"><option value="all">Todos</option><option value="ray-black7">Ray Black7</option></select></label>
         <label className="grid min-w-0 gap-2 text-base font-semibold">Das (opcional)<input type="time" value={blockStart} onChange={e => setBlockStart(e.target.value)} className="w-full min-w-0 rounded-xl border border-zinc-700 bg-zinc-950 p-3" /></label>
         <label className="grid min-w-0 gap-2 text-base font-semibold">Até (opcional)<input type="time" value={blockEnd} onChange={e => setBlockEnd(e.target.value)} className="w-full min-w-0 rounded-xl border border-zinc-700 bg-zinc-950 p-3" /></label>
         <button type="button" onClick={addBlock} className="rounded-lg bg-zinc-700 px-4 py-2 text-sm font-bold">Adicionar folga</button></div>
@@ -109,12 +110,12 @@ export const AdminAppointmentsPage: React.FC = () => {
       <button type="button" disabled={loading} onClick={saveSettings} className="rounded-xl bg-amber-400 px-6 py-3 font-black text-black disabled:opacity-50">Salvar {tab === 'horarios' ? 'meus horários' : 'minhas folgas'}</button>
     </section>}
     {tab === 'reservas' && <><h2 className="text-xl font-bold">Seus clientes agendados</h2>
-    <div className="grid gap-3">{rows.map(row => <article key={row.id} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 space-y-2">
+    <div className="grid gap-3">{confirmedRows.map(row => <article key={row.id} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 space-y-2">
       <div className="flex flex-wrap justify-between gap-2"><strong>{new Date(row.start_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })} · {row.service_name}</strong><span className={row.payment_status === 'paid' ? 'text-emerald-400' : 'text-amber-400'}>{({pending_payment: 'Aguardando Pix', confirmed: 'Confirmado', completed: 'Atendido', cancelled: 'Cancelado', expired: 'Reserva vencida'} as Record<string,string>)[row.status] || row.status}</span></div>
       <p className="text-sm text-zinc-300">{row.professional_name} · R$ {(row.amount_cents / 100).toFixed(2).replace('.', ',')}</p>
       <p className="break-words text-sm text-zinc-300">{row.customer_name} · {row.customer_phone} · {row.customer_email}</p>
       <p className="break-all text-xs text-zinc-500">Código: {row.payment_reference}</p>
       {row.status === 'confirmed' && <div className="flex gap-2"><button onClick={() => change(row.id, 'completed')} className="rounded-lg bg-emerald-700 px-3 py-2 text-sm">Concluir</button><button onClick={() => change(row.id, 'cancelled')} className="rounded-lg bg-zinc-700 px-3 py-2 text-sm">Cancelar</button></div>}
-    </article>)}{!loading && !rows.length && <p className="text-zinc-400">Ainda não há clientes agendados.</p>}</div></>}
+    </article>)}{!loading && !confirmedRows.length && <p className="text-zinc-400">Ainda não há agendamentos confirmados.</p>}</div></>}
   </div></AdminLayout>;
 };
