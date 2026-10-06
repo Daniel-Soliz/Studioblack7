@@ -26,6 +26,7 @@ export const AdminAppointmentsPage: React.FC = () => {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [preset, setPreset] = useState({ start: '09:00', end: '20:00', lunchStart: '12:00', lunchEnd: '13:00' });
   const [editingPreset, setEditingPreset] = useState(false);
+  const [removingDay, setRemovingDay] = useState<number | null>(null);
   const [addingDay, setAddingDay] = useState<number | null>(null);
   const [extraStart, setExtraStart] = useState('20:00');
   const [extraEnd, setExtraEnd] = useState('21:00');
@@ -69,6 +70,10 @@ export const AdminAppointmentsPage: React.FC = () => {
   const toggleHour = (day: number, slot: Window) => {
     const current = splitHours(settings?.weekly[day] || []);
     setHours(day, current.map(w => w.start === slot.start ? { ...w, closed: !w.closed } : w));
+  };
+  const removeHour = (day: number, slot: Window) => {
+    setHours(day, splitHours(settings?.weekly[day] || []).filter(w => w.start !== slot.start || w.end !== slot.end));
+    setError(''); setNotice('Horário removido. Toque em Salvar meus horários.');
   };
   const toggleSimpleDay = (day: number) => {
     const current = settings?.weekly[day] || [];
@@ -130,11 +135,12 @@ export const AdminAppointmentsPage: React.FC = () => {
           const open = dayOpen(settings.weekly[day]);
           const hours = splitHours(settings.weekly[day] || []);
           return <section key={name} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-bold text-lg">{name}</h3><div className="flex gap-2"><button type="button" onClick={() => { setAddingDay(addingDay === day ? null : day); setError(''); }} className="rounded-lg border border-amber-400/50 px-3 py-2 text-sm font-bold text-amber-300">+ Horário</button><button type="button" aria-pressed={open} onClick={() => toggleSimpleDay(day)} className={'rounded-lg px-4 py-2 text-sm font-bold ' + (open ? 'bg-emerald-800 text-white' : 'bg-zinc-800 text-zinc-300')}>{open ? 'Aberto' : 'Fechado'}</button></div></div>
+            <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-bold text-lg">{name}</h3><div className="flex flex-wrap gap-2"><button type="button" onClick={() => { setAddingDay(addingDay === day ? null : day); setError(''); }} className="rounded-lg border border-amber-400/50 px-3 py-2 text-sm font-bold text-amber-300">+ Horário</button><button type="button" aria-pressed={removingDay === day} onClick={() => { setRemovingDay(removingDay === day ? null : day); setAddingDay(null); }} className="rounded-lg border border-red-400/50 px-3 py-2 text-sm font-bold text-red-300">{removingDay === day ? 'Concluir remoção' : 'Remover horário'}</button><button type="button" aria-pressed={open} onClick={() => toggleSimpleDay(day)} className={'rounded-lg px-4 py-2 text-sm font-bold ' + (open ? 'bg-emerald-800 text-white' : 'bg-zinc-800 text-zinc-300')}>{open ? 'Aberto' : 'Fechado'}</button></div></div>
             {addingDay === day && <div className="mt-4 rounded-xl border border-zinc-700 p-3 space-y-3"><div className="grid grid-cols-2 gap-3"><label className="grid min-w-0 gap-1 text-sm">Das<input type="time" value={extraStart} onChange={e => setExtraStart(e.target.value)} className="w-full min-w-0 rounded-lg bg-zinc-900 p-3" /></label><label className="grid min-w-0 gap-1 text-sm">Até<input type="time" value={extraEnd} onChange={e => setExtraEnd(e.target.value)} className="w-full min-w-0 rounded-lg bg-zinc-900 p-3" /></label></div><button type="button" onClick={() => addExtraHours(day)} className="w-full rounded-lg bg-amber-400 p-3 font-bold text-black">Adicionar horário em {name}</button></div>}
-            {open ? <div className="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-2">{hours.map(slot => {
+            {removingDay === day && <p className="mt-3 text-sm text-red-300">Toque no horário que deseja remover da lista.</p>}
+            {open || removingDay === day ? <div className="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-2">{hours.map(slot => {
               const selected = !slot.closed;
-              return <button key={slot.start} type="button" aria-pressed={selected} aria-label={slot.start + ' até ' + slot.end + (selected ? ', disponível' : ', bloqueado')} onClick={() => toggleHour(day, slot)} className={'rounded-lg border py-3 px-2 text-sm font-bold ' + (selected ? 'border-amber-400 bg-amber-400 text-black' : 'border-zinc-700 bg-zinc-900 text-zinc-400')}>{slot.start} – {slot.end}</button>;
+              return <button key={slot.start} type="button" aria-pressed={selected} aria-label={(removingDay === day ? 'Remover horário ' : '') + slot.start + ' até ' + slot.end + (selected ? ', disponível' : ', bloqueado')} onClick={() => removingDay === day ? removeHour(day, slot) : toggleHour(day, slot)} className={'rounded-lg border py-3 px-2 text-sm font-bold ' + (selected ? 'border-amber-400 bg-amber-400 text-black' : 'border-zinc-700 bg-zinc-900 text-zinc-400')}>{slot.start} – {slot.end}{removingDay === day && <span className="block mt-1 text-xs">× Remover</span>}</button>;
             })}</div> : <p className="mt-2 text-sm text-zinc-500">Sem atendimento neste dia.</p>}
           </section>;
         })}</div>
