@@ -136,13 +136,18 @@ Deno.serve(async (req) => {
       const professional = professionals.find(p => p.id === body.professionalId);
       const amount = Number(service?.priceNumber);
       if (!service || !professional || !(amount > 0) || amount > 5000) return respond({ error: 'Serviço ou profissional indisponível.' }, 400);
+      if (body.paymentOption !== undefined && !['full', 'half'].includes(body.paymentOption)) return respond({ error: 'Escolha pagar 50% ou o valor completo.' }, 400);
+      const totalCents = Math.round(amount * 100);
+      const chargeCents = body.paymentOption === 'half' ? Math.ceil(totalCents / 2) : totalCents;
+      if (chargeCents < 100) return respond({ error: 'O Pix precisa ser de pelo menos R$ 1,00. Escolha o valor completo.' }, 400);
+      const charge = chargeCents / 100;
       const duration = 60;
       const customer_name = text(body.name), customer_email = text(body.email, 160).toLowerCase(), customer_phone = text(body.phone, 20).replace(/\D/g, '');
       if (customer_name.length < 2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(customer_email) || customer_phone.length < 10 || customer_phone.length > 13) return respond({ error: 'Informe nome, e-mail e telefone válidos.' }, 400);
       const times = slot(text(body.date, 10), text(body.time, 5), duration, professional.id, await loadSettings());
-      const newRows = await db('appointments', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ ...times, service_id: service.id, service_name: service.name, professional_id: professional.id, professional_name: professional.name, customer_name, customer_email, customer_phone, amount_cents: Math.round(amount * 100), hold_expires_at: new Date(Date.now() + 35 * 60000).toISOString() }) });
+      const newRows = await db('appointments', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ ...times, service_id: service.id, service_name: service.name, professional_id: professional.id, professional_name: professional.name, customer_name, customer_email, customer_phone, amount_cents: chargeCents, service_total_cents: totalCents, hold_expires_at: new Date(Date.now() + 35 * 60000).toISOString() }) });
       const row = newRows[0];
-      const mpResponse = await fetch('https://api.mercadopago.com/v1/orders', { method: 'POST', headers: { Authorization: `Bearer ${mpToken}`, 'Content-Type': 'application/json', 'X-Idempotency-Key': row.id }, body: JSON.stringify({ type: 'online', external_reference: row.payment_reference, total_amount: amount.toFixed(2), processing_mode: 'automatic', payer: { email: customer_email }, transactions: { payments: [{ amount: amount.toFixed(2), payment_method: { id: 'pix', type: 'bank_transfer' }, expiration_time: 'PT30M' }] } }) });
+      const mpResponse = await fetch('https://api.mercadopago.com/v1/orders', { method: 'POST', headers: { Authorization: `Bearer ${mpToken}`, 'Content-Type': 'application/json', 'X-Idempotency-Key': row.id }, body: JSON.stringify({ type: 'online', external_reference: row.payment_reference, total_amount: charge.toFixed(2), processing_mode: 'automatic', payer: { email: customer_email }, transactions: { payments: [{ amount: charge.toFixed(2), payment_method: { id: 'pix', type: 'bank_transfer' }, expiration_time: 'PT30M' }] } }) });
       const order = await mpResponse.json().catch(() => ({}));
       if (!mpResponse.ok || !order.id) {
         await db(`appointments?id=eq.${row.id}`, { method: 'PATCH', body: JSON.stringify({ status: 'cancelled', payment_status: 'failed' }) });
@@ -150,7 +155,7 @@ Deno.serve(async (req) => {
       }
       await db(`appointments?id=eq.${row.id}`, { method: 'PATCH', body: JSON.stringify({ mp_order_id: String(order.id) }) });
       const method = order.transactions?.payments?.[0]?.payment_method || {};
-      return respond({ reference: row.payment_reference, amount, qrCode: method.qr_code, qrCodeBase64: method.qr_code_base64, ticketUrl: method.ticket_url, status: 'pending_payment' });
+      return respond({ reference: row.payment_reference, amount: charge, totalAmount: totalCents / 100, remainingAmount: (totalCents - chargeCents) / 100, qrCode: method.qr_code, qrCodeBase64: method.qr_code_base64, ticketUrl: method.ticket_url, status: 'pending_payment' });
     }
     if (action === 'status') {
       const reference = text(body.reference, 64);
@@ -158,7 +163,7 @@ Deno.serve(async (req) => {
       const rows = await db(`appointments?payment_reference=eq.${reference}&select=*`);
       if (!rows.length) return respond({ error: 'Agendamento não encontrado.' }, 404);
       const row = await reconcile(rows[0]);
-      return respond({ status: row.status, paymentStatus: row.payment_status, service: row.service_name, professional: row.professional_name, start: row.start_at });
+      return respond({ status: row.status, paymentStatus: row.payment_status, amount: row.amount_cents / 100, totalAmount: (row.service_total_cents ?? row.amount_cents) / 100, remainingAmount: ((row.service_total_cents ?? row.amount_cents) - row.amount_cents) / 100, service: row.service_name, professional: row.professional_name, start: row.start_at });
     }
     if (action === 'admin_list' || action === 'admin_update' || action === 'admin_settings' || action === 'admin_save_settings' || action === 'admin_report') {
       const token = text(body.token, 1000);
