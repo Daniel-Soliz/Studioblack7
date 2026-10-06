@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
       if (!auth.ok || !(await auth.json()).success) return respond({ error: 'Acesso negado.' }, 401);
       if (action === 'admin_report') {
         const month = text(body.month, 7);
-        if (!/^20\\d{2}-(0[1-9]|1[0-2])$/.test(month)) return respond({ error: 'Escolha um mês válido.' }, 400);
+        if (!/^20\d{2}-(0[1-9]|1[0-2])$/.test(month)) return respond({ error: 'Escolha um mês válido.' }, 400);
         return respond({ report: await db('rpc/dashboard_report', { method: 'POST', body: JSON.stringify({ p_month: month + '-01' }) }) });
       }
       if (action === 'admin_settings') return respond({ settings: await loadSettings() });
