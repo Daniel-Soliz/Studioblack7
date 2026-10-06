@@ -45,25 +45,17 @@ export const AdminAppointmentsPage: React.FC = () => {
     try { await call('admin_update', { id, status }); await refresh(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Falha ao atualizar.'); }
   };
-  const editWindow = (day: number, index: number, field: 'start' | 'end', value: string) => setSettings(prev => {
-    if (!prev) return prev;
-    const weekly = { ...prev.weekly, [day]: [...prev.weekly[day]] };
-    weekly[day][index] = { ...weekly[day][index], [field]: value };
-    return { ...prev, weekly };
-  });
-  const setDay = (day: number, windows: Window[]) => setSettings(prev => prev ? { ...prev, weekly: { ...prev.weekly, [day]: windows } } : prev);
-  const toggleDay = (day: number) => setSettings(prev => {
-    if (!prev) return prev;
-    const windows = prev.weekly[day] || [];
-    const closed = dayOpen(windows);
-    return { ...prev, weekly: { ...prev.weekly, [day]: (windows.length ? windows : hourlyWindows()).map(w => ({ ...w, closed })) } };
-  });
-  const addWindow = (day: number) => {
-    if (!settings) return;
-    const windows = settings.weekly[day] || [];
-    const next = hourlyWindows().find(candidate => !windows.some(w => candidate.start < w.end && candidate.end > w.start));
-    if (!next) { setError('Os horários de 9h a 20h já estão preenchidos. Edite os intervalos para incluir outro horário.'); return; }
-    setDay(day, [...windows, { ...next, closed: windows.length > 0 && !dayOpen(windows) }]);
+  const selectedHours = (day: number) => hourlyWindows().filter(slot => (settings?.weekly[day] || []).some(w => !w.closed && w.start <= slot.start && w.end >= slot.end));
+  const setHours = (day: number, windows: Window[]) => setSettings(prev => prev ? { ...prev, weekly: { ...prev.weekly, [day]: windows } } : prev);
+  const toggleHour = (day: number, slot: Window) => {
+    const current = selectedHours(day);
+    const selected = current.some(w => w.start === slot.start);
+    setHours(day, selected ? current.filter(w => w.start !== slot.start) : [...current, slot].sort((a, b) => a.start.localeCompare(b.start)));
+  };
+  const toggleSimpleDay = (day: number) => {
+    const current = settings?.weekly[day] || [];
+    if (dayOpen(current)) setHours(day, current.map(w => ({ ...w, closed: true })));
+    else setHours(day, current.length ? current.map(w => ({ ...w, closed: false })) : hourlyWindows());
   };
   const saveSettings = async () => {
     if (!settings) return;
@@ -85,18 +77,24 @@ export const AdminAppointmentsPage: React.FC = () => {
     {notice && <p role="status" className="text-emerald-400">{notice}</p>}
     <nav className="grid grid-cols-3 gap-2" aria-label="Organizar agenda">{([['reservas', 'Clientes'], ['horarios', 'Dias e horas'], ['folgas', 'Folgas']] as const).map(([value, label]) => <button type="button" key={value} onClick={() => setTab(value)} aria-pressed={tab === value} className={`rounded-xl p-3 sm:p-4 text-sm sm:text-base font-bold ${tab === value ? 'bg-amber-400 text-black' : 'bg-zinc-800 text-white'}`}>{label}</button>)}</nav>
     {settings && tab !== 'reservas' && <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 sm:p-6 space-y-5">
-      <div><h2 className="text-xl font-bold text-amber-400">{tab === 'horarios' ? 'Quando você vai atender?' : 'Precisa de uma folga?'}</h2><p className="text-sm text-zinc-300">{tab === 'horarios' ? 'Abra os dias de atendimento e cadastre até 24 horários por dia. Fechar um dia mantém os horários para quando você reabrir.' : 'Escolha o dia em que não vai atender. Você também pode bloquear só algumas horas.'}</p></div>
-      {tab === 'horarios' && <><p className="text-sm text-zinc-300">Atendimento de hora em hora, das 9h às 12h e das 13h às 20h. Almoço: 12h às 13h.</p><button type="button" onClick={() => { if (!settings.weekly['1']?.length) { setError('Primeiro defina os horários de segunda-feira.'); return; } setSettings({ ...settings, weekly: { ...settings.weekly, ...Object.fromEntries([2,3,4,5,6].map(day => [String(day), settings.weekly['1'].map(w => ({...w}))])) } }); }} className="rounded-xl border border-zinc-600 px-4 py-3 text-sm font-bold">Usar horários de segunda de terça a sábado</button><div className="grid gap-3">{dayNames.map((name, day) => <div key={name} className="rounded-xl bg-zinc-950 border border-zinc-800 p-3 flex flex-col lg:flex-row lg:items-center gap-3">
-        <div className="lg:w-40 flex items-center justify-between gap-3 font-semibold"><span>{name}</span><button type="button" aria-pressed={dayOpen(settings.weekly[day])} onClick={() => toggleDay(day)} className={`rounded-lg px-3 py-2 text-sm ${dayOpen(settings.weekly[day]) ? 'bg-emerald-800 text-white' : 'bg-zinc-700 text-zinc-300'}`}>{dayOpen(settings.weekly[day]) ? 'Aberto' : 'Fechado'}</button></div>
-        <div className="min-w-0 flex-1 flex flex-wrap items-center gap-3">{settings.weekly[day]?.map((window, index) => <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 w-full sm:w-auto min-w-0">
-          <input aria-label={`${name}, início ${index + 1}`} type="time" value={window.start} onChange={e => editWindow(day, index, 'start', e.target.value)} className="w-full min-w-0 sm:w-[110px] rounded-lg border border-zinc-700 bg-zinc-900 p-2 text-sm" />
-          <span className="text-zinc-400">até</span>
-          <input aria-label={`${name}, fim ${index + 1}`} type="time" value={window.end} onChange={e => editWindow(day, index, 'end', e.target.value)} className="w-full min-w-0 sm:w-[110px] rounded-lg border border-zinc-700 bg-zinc-900 p-2 text-sm" />
-          <button type="button" aria-label={`Remover intervalo ${index + 1} de ${name}`} onClick={() => setDay(day, settings.weekly[day].filter((_, i) => i !== index))} className="col-span-3 sm:col-span-1 text-red-400 py-2 text-sm">Remover intervalo</button>
-        </div>)}{!settings.weekly[day]?.length && <span className="text-zinc-500 text-sm">Fechado</span>}</div>
-        <button type="button" disabled={(settings.weekly[day]?.length || 0) >= 24} onClick={() => addWindow(day)} className="text-amber-400 border border-amber-500/40 rounded-lg px-3 py-2 text-sm disabled:opacity-40">+ Outro horário</button>
-        <button type="button" onClick={() => setDay(day, hourlyWindows().map(w => ({ ...w, closed: settings.weekly[day]?.length > 0 && !dayOpen(settings.weekly[day]) })))} className="rounded-lg border border-zinc-600 px-3 py-2 text-sm">Preencher 9h–20h (almoço 12h–13h)</button>
-      </div>)}</div><p className="text-sm text-zinc-400">Clique em Salvar meus horários após editar ou abrir/fechar um dia. Os horários ficam guardados mesmo com o dia fechado.</p></>}
+      <div><h2 className="text-xl font-bold text-amber-400">{tab === 'horarios' ? 'Quando você vai atender?' : 'Precisa de uma folga?'}</h2><p className="text-sm text-zinc-300">{tab === 'horarios' ? 'Cada atendimento ocupa 1 hora. Toque no dia para abrir ou fechar e nos horários para liberar ou bloquear.' : 'Escolha o dia em que não vai atender. Você também pode bloquear só algumas horas.'}</p></div>
+      {tab === 'horarios' && <>
+        <div className="rounded-xl bg-amber-400/10 p-4 text-sm text-amber-200"><strong>9h às 20h · 1 hora por cliente</strong><p className="mt-1">Almoço: 12h às 13h. Último atendimento: 19h às 20h.</p></div>
+        <button type="button" onClick={() => setSettings({ ...settings, weekly: { ...settings.weekly, ...Object.fromEntries([1,2,3,4,5,6].map(day => [String(day), hourlyWindows()])) } })} className="w-full rounded-xl border border-amber-400/50 px-4 py-3 font-semibold text-amber-300">Liberar todos os horários de segunda a sábado</button>
+        <p className="text-sm text-zinc-400">Dourado = disponível. Cinza = bloqueado.</p>
+        <div className="grid gap-4">{dayNames.map((name, day) => {
+          const open = dayOpen(settings.weekly[day]);
+          const hours = selectedHours(day);
+          return <section key={name} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+            <div className="flex items-center justify-between gap-3"><h3 className="font-bold text-lg">{name}</h3><button type="button" aria-pressed={open} onClick={() => toggleSimpleDay(day)} className={'rounded-lg px-4 py-2 text-sm font-bold ' + (open ? 'bg-emerald-800 text-white' : 'bg-zinc-800 text-zinc-300')}>{open ? 'Aberto' : 'Fechado'}</button></div>
+            {open ? <div className="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-2">{hourlyWindows().map(slot => {
+              const selected = hours.some(w => w.start === slot.start);
+              return <button key={slot.start} type="button" aria-pressed={selected} aria-label={slot.start + ' até ' + slot.end + (selected ? ', disponível' : ', bloqueado')} onClick={() => toggleHour(day, slot)} className={'rounded-lg border py-3 px-2 text-sm font-bold ' + (selected ? 'border-amber-400 bg-amber-400 text-black' : 'border-zinc-700 bg-zinc-900 text-zinc-400')}>{slot.start} – {slot.end}</button>;
+            })}</div> : <p className="mt-2 text-sm text-zinc-500">Sem atendimento neste dia.</p>}
+          </section>;
+        })}</div>
+        <p className="text-sm text-zinc-400">Após ajustar, toque em Salvar meus horários.</p>
+      </>}
       {tab === 'folgas' && <div className="border-t border-zinc-800 pt-5 space-y-3"><h3 className="font-bold">Marcar uma folga</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0"><label className="grid min-w-0 gap-2 text-base font-semibold">Data<input type="date" value={blockDate} onChange={e => setBlockDate(e.target.value)} className="w-full min-w-0 rounded-xl border border-zinc-700 bg-zinc-950 p-3" /></label>
         <label className="grid min-w-0 gap-2 text-base font-semibold">Profissional<select value={blockProfessional} onChange={e => setBlockProfessional(e.target.value)} className="w-full min-w-0 rounded-xl border border-zinc-700 bg-zinc-950 p-3"><option value="all">Todos</option><option value="ray-black7">Ray Black7</option></select></label>
