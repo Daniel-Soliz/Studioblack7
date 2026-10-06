@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Product, 
   ProductCategoryItem, 
@@ -32,7 +32,7 @@ interface StoreContextType {
   saveSettings: (s: SiteSettings) => void;
   updateOrderStatus: (orderId: string, status: Order['status'], paymentStatus?: Order['paymentStatus']) => boolean;
   saveOrder: (order: Order) => Order;
-  deleteOrder: (orderId: string) => boolean;
+  deleteOrder: (orderId: string) => Promise<boolean>;
   createOrder: (order: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'>) => Order;
   logActivity: (action: string, detail: string) => void;
   exportData: () => string;
@@ -50,6 +50,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [content, setContent] = useState<SiteContent>(StorageService.getContent());
   const [settings, setSettings] = useState<SiteSettings>(StorageService.getSettings());
   const [orders, setOrders] = useState<Order[]>([]);
+  const orderSync = useRef<Promise<void>>(Promise.resolve());
   const [activities, setActivities] = useState<ActivityLog[]>([]);
 
   const refreshData = useCallback(() => {
@@ -216,7 +217,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       void CloudStoreService.save('products', StorageService.getProducts()).catch(error => console.error('Falha ao sincronizar estoque:', error));
     }
     StorageService.logActivity('Status de Pedido Alterado', `Pedido ${orderId} atualizado para: ${status}.`);
-    void CloudStoreService.save('orders', StorageService.getOrders()).catch((error) => console.error('Falha ao sincronizar pedidos:', error));
+    orderSync.current = CloudStoreService.save('orders', StorageService.getOrders());
+    void orderSync.current.catch((error) => console.error('Falha ao sincronizar pedidos:', error));
     refreshData();
     return res;
   };
@@ -224,27 +226,36 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const saveOrder = (order: Order) => {
     const saved = StorageService.saveOrder(order);
     StorageService.logActivity('Pedido Salvo', `Pedido #${saved.orderNumber} salvo pelo painel administrativo.`);
-    void CloudStoreService.save('orders', StorageService.getOrders()).catch((error) => console.error('Falha ao sincronizar pedidos:', error));
+    orderSync.current = CloudStoreService.save('orders', StorageService.getOrders());
+    void orderSync.current.catch((error) => console.error('Falha ao sincronizar pedidos:', error));
     refreshData();
     return saved;
   };
 
-  const deleteOrder = (orderId: string) => {
-    const target = StorageService.getOrders().find(o => o.id === orderId);
-    const deleted = StorageService.deleteOrder(orderId);
-    if (deleted) {
-      StorageService.logActivity('Pedido Excluído', `Pedido #${target?.orderNumber || orderId} removido pelo painel administrativo.`);
-      void CloudStoreService.save('orders', StorageService.getOrders()).catch((error) => console.error('Falha ao sincronizar pedidos:', error));
-      refreshData();
+  const deleteOrder = async (orderId: string) => {
+    await orderSync.current;
+    const cloud = await CloudStoreService.loadAll();
+    const current = Array.isArray(cloud.orders) ? cloud.orders as Order[] : StorageService.getOrders();
+    const next = current.filter(order => order.id !== orderId);
+    await CloudStoreService.save('orders', next);
+    StorageService.saveOrders(next);
+    setOrders(next);
+    let savedPayments: any[] = [];
+    try { savedPayments = JSON.parse(localStorage.getItem('sb7-client-store-payments') || '[]'); } catch { /* Remove invalid local records after cloud deletion. */ }
+    if (Array.isArray(savedPayments)) {
+      localStorage.setItem('sb7-client-store-payments', JSON.stringify(savedPayments.filter(record => record?.order?.id !== orderId)));
+      window.dispatchEvent(new Event('sb7-store-payments'));
     }
-    return deleted;
+    StorageService.logActivity('Pedido Excluído', `Pedido ${orderId} removido do sistema.`);
+    return true;
   };
 
   const createOrder = (orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'>) => {
     const newOrd = StorageService.createOrder(orderData);
     void CloudStoreService.save('products', StorageService.getProducts()).catch(error => console.error('Falha ao sincronizar estoque:', error));
     StorageService.logActivity('Novo Pedido Recebido', `Pedido #${newOrd.orderNumber} - R$ ${newOrd.total.toFixed(2)}.`);
-    void CloudStoreService.save('orders', StorageService.getOrders()).catch((error) => console.error('Falha ao sincronizar pedidos:', error));
+    orderSync.current = CloudStoreService.save('orders', StorageService.getOrders());
+    void orderSync.current.catch((error) => console.error('Falha ao sincronizar pedidos:', error));
     refreshData();
     return newOrd;
   };
