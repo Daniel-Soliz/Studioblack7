@@ -13,7 +13,6 @@ async function request(data: Record<string, unknown>) {
   return result;
 }
 const inSaoPaulo = (date: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
-const minutes = (duration?: string) => duration?.includes(':') ? Number(duration.split(':')[0]) * 60 + Number(duration.split(':')[1]) : Number.parseInt(duration || '40', 10) || 40;
 
 export const BookingPage: React.FC = () => {
   const { services } = useStore();
@@ -47,7 +46,7 @@ export const BookingPage: React.FC = () => {
   const maxDate = inSaoPaulo(new Date(Date.now() + 60 * 86400000));
   const options = useMemo(() => {
     if (!date || !service || loading) return [];
-    const length = Math.max(20, Math.min(180, minutes(service.duration)));
+    const length = 60;
     const slots: string[] = [];
     for (const window of windows) {
       const begin = Number(window.start.slice(0, 2)) * 60 + Number(window.start.slice(3));
@@ -131,7 +130,7 @@ export const BookingPage: React.FC = () => {
       setPayment({ ...result, booking: {
         service: service?.name || '', professional: TEAM.find(p => p.id === professionalId)?.name || '',
         start: new Date(date + 'T' + time + ':00-03:00').toISOString(),
-        end: new Date(Date.parse(date + 'T' + time + ':00-03:00') + minutes(service?.duration) * 60000).toISOString(),
+        end: new Date(Date.parse(date + 'T' + time + ':00-03:00') + 60 * 60000).toISOString(),
         customer: name.trim(),
       } }); setStatus('pending_payment');
     } catch (e) {
@@ -165,7 +164,7 @@ export const BookingPage: React.FC = () => {
         {step === 2 && <section className="space-y-4 min-w-0"><p className="rounded-xl bg-amber-400/10 p-3 font-bold text-amber-300">{service?.name} · {service?.price}</p><h2 className="text-xl font-bold">Qual dia fica bom para você?</h2>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">{Array.from({length: 7}, (_, i) => { const d = new Date(`${today}T12:00:00-03:00`); d.setUTCDate(d.getUTCDate() + i); const value = inSaoPaulo(d); return <button type="button" key={value} onClick={() => setDate(value)} aria-pressed={date === value} className={`rounded-xl border p-3 text-center ${date === value ? 'bg-amber-400 text-black border-amber-400' : 'bg-zinc-950 border-zinc-700'}`}><span className="block text-sm">{i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : d.toLocaleDateString('pt-BR', {weekday: 'short', timeZone: 'America/Sao_Paulo'})}</span><strong className="block text-lg">{d.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo'})}</strong></button>; })}</div>
           <label className="grid min-w-0 gap-2 font-semibold">Ou escolha outra data<input type="date" min={today} max={maxDate} value={date} onChange={e => { setDate(e.target.value); setError(''); }} className="block box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-3" /></label>
-          {date && <div><h3 className="font-bold text-lg mb-3">Agora escolha a hora</h3>{loading ? <p role="status">Buscando horários...</p> : <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">{options.map(hour => <button type="button" key={hour} onClick={() => setTime(hour)} aria-pressed={time === hour} className={`rounded-xl border py-3 text-base font-bold ${time === hour ? 'bg-amber-400 text-black border-amber-400' : 'bg-zinc-950 border-zinc-700'}`}>{hour}</button>)}</div>}{!loading && !options.length && <p className="text-zinc-300">Este dia está sem horários. Toque em outra data.</p>}</div>}
+          {date && <div><h3 className="font-bold text-lg mb-3">Agora escolha a hora</h3><p className="mb-3 text-sm text-zinc-400">Cada atendimento dura 1 hora. Almoço das 12h às 13h.</p>{loading ? <p role="status">Buscando horários...</p> : <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{options.map(hour => <button type="button" key={hour} onClick={() => setTime(hour)} aria-pressed={time === hour} className={`rounded-xl border py-3 text-base font-bold ${time === hour ? 'bg-amber-400 text-black border-amber-400' : 'bg-zinc-950 border-zinc-700'}`}>{hour} – {String(Number(hour.slice(0, 2)) + 1).padStart(2, '0')}:00</button>)}</div>}{!loading && !options.length && <p className="text-zinc-300">Este dia está sem horários. Toque em outra data.</p>}</div>}
         </section>}
         {step === 3 && <section className="space-y-4 min-w-0"><h2 className="text-xl font-bold">Como podemos falar com você?</h2>
           <label className="grid min-w-0 gap-2 font-semibold">Seu nome completo<input required autoComplete="name" placeholder="Digite seu nome completo" minLength={2} value={name} onChange={e => setName(e.target.value)} className="box-border w-full min-w-0 max-w-full rounded-xl bg-zinc-950 border border-zinc-700 p-4 text-base" /></label>
