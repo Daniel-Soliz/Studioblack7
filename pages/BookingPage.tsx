@@ -45,6 +45,8 @@ export const BookingPage: React.FC = () => {
   const [savedPayments, setSavedPayments] = useState<SavedPayment[]>(readSavedPayments);
   const [payment, setPayment] = useState<SavedPayment | null>(null);
   const [paymentOption, setPaymentOption] = useState<'full' | 'half'>('full');
+  const [cancellingReference, setCancellingReference] = useState('');
+  const [notice, setNotice] = useState('');
   const [status, setStatus] = useState('');
   const [name, setName] = useState(''), [email, setEmail] = useState(''), [phone, setPhone] = useState('');
   const rememberPayment = (record: SavedPayment) => {
@@ -84,6 +86,17 @@ export const BookingPage: React.FC = () => {
       try { localStorage.setItem('sb7-client-bookings', JSON.stringify(next)); } catch {}
       return next;
     });
+  };
+  const cancelSavedBooking = async (record: SavedPayment) => {
+    if (cancellingReference) return;
+    setCancellingReference(record.reference); setError(''); setNotice('');
+    try {
+      await request({ action: 'cancel_reservation', reference: record.reference });
+      forgetPayment(record.reference);
+      if (payment?.reference === record.reference) { setPayment(null); setStatus(''); }
+      setNotice('Agendamento cancelado. O horário foi liberado.');
+    } catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível cancelar. Tente novamente.'); }
+    finally { setCancellingReference(''); }
   };
   const service = services.find(s => s.id === serviceId);
   const today = inSaoPaulo(new Date());
@@ -188,6 +201,8 @@ export const BookingPage: React.FC = () => {
       <p className="text-amber-400 text-xs font-bold uppercase tracking-[.25em]">Studio Black7</p>
       <h1 className="font-['Cinzel'] text-3xl sm:text-4xl font-black mt-2">{['confirmed', 'completed'].includes(status) ? 'Seu momento Black7' : 'Vamos marcar seu horário?'}</h1>
       <p className="text-zinc-400 mt-3">{['confirmed', 'completed'].includes(status) ? 'Todos os detalhes do seu atendimento em um só lugar.' : 'São só 3 passos. Escolha o serviço, marque o horário e informe seus dados.'}</p>
+      {notice && <p role="status" className="mt-6 rounded-xl border border-emerald-500/30 p-4 text-emerald-300">{notice}</p>}
+      {!payment && error && <p role="alert" className="mt-4 text-red-300">{error}</p>}
       {!payment && savedPayments.length > 0 && <section className="mt-8 rounded-2xl border border-amber-400/40 bg-zinc-900 p-4 sm:p-6 space-y-4">
         <h2 className="text-xl font-bold text-amber-300">Seus agendamentos neste celular</h2>
         <p className="text-sm text-zinc-300">Saiu para abrir o banco? Continue o Pix da reserva abaixo. Você não precisa começar de novo.</p>
@@ -199,6 +214,7 @@ export const BookingPage: React.FC = () => {
             {record.booking?.start && <p className="text-sm">{new Date(record.booking.start).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })}{record.booking.end && ' até ' + new Date(record.booking.end).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })}</p>}
             <p className="text-sm text-zinc-300">Pix: R$ {record.amount.toFixed(2).replace('.', ',')}{Boolean(record.remainingAmount) && ' · restante no atendimento: R$ ' + record.remainingAmount!.toFixed(2).replace('.', ',')}</p>
             {!expired && <button type="button" onClick={() => { setStatus('checking'); setPayment(record); setError(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-full rounded-xl bg-amber-400 px-4 py-3 font-bold text-black">{confirmed ? 'Ver meu agendamento' : 'Continuar pagamento Pix'}</button>}
+            {!expired && !confirmed && <button type="button" disabled={Boolean(cancellingReference)} onClick={() => void cancelSavedBooking(record)} className="w-full rounded-xl border border-red-400/50 bg-red-500/5 px-4 py-3 font-bold text-red-300 disabled:opacity-50">{cancellingReference === record.reference ? 'Cancelando...' : 'Cancelar agendamento'}</button>}
             {expired && <p className="text-sm text-zinc-400">Este Pix não deve mais ser pago. Escolha um novo horário abaixo.</p>}
             {expired && <button type="button" onClick={() => forgetPayment(record.reference)} className="text-sm text-zinc-400 underline">Remover da minha lista</button>}
           </article>;
