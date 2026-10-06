@@ -6,6 +6,13 @@ export type ServiceCategory =
   | 'Química / Alisamento'
   | 'Coloração';
 
+export interface ServicePhoto {
+  url: string;
+  fit?: 'cover' | 'contain';
+  positionX?: number;
+  positionY?: number;
+}
+
 export interface ServiceItem {
   id: string;
   name: string;
@@ -20,6 +27,7 @@ export interface ServiceItem {
   status?: 'active' | 'inactive';
   order?: number;
   image?: string;
+  photos?: ServicePhoto[];
   imageFit?: 'cover' | 'contain';
   imagePositionX?: number;
   imagePositionY?: number;
