@@ -157,6 +157,38 @@ Deno.serve(async (req) => {
       const method = order.transactions?.payments?.[0]?.payment_method || {};
       return respond({ reference: row.payment_reference, amount: charge, totalAmount: totalCents / 100, remainingAmount: (totalCents - chargeCents) / 100, qrCode: method.qr_code, qrCodeBase64: method.qr_code_base64, ticketUrl: method.ticket_url, status: 'pending_payment' });
     }
+    if (action === 'cancel_reservation') {
+      const reference = text(body.reference, 64);
+      if (!/^[a-f0-9]{32}$/.test(reference)) return respond({ error: 'Código inválido.' }, 400);
+      const rows = await db(`appointments?payment_reference=eq.${reference}&select=*`);
+      if (!rows.length) return respond({ error: 'Reserva não encontrada.' }, 404);
+      const row = rows[0];
+      if (row.cancelled_by_customer) return respond({ cancelled: true });
+      if (row.payment_status === 'paid' || ['confirmed', 'completed'].includes(row.status)) return respond({ error: 'Esta reserva já foi paga. Fale com a barbearia para solicitar alterações.' }, 409);
+      if (row.mp_order_id) {
+        if (!mpToken) return respond({ error: 'Não foi possível cancelar o Pix agora. Tente novamente.' }, 503);
+        const order = await mpOrder(row.mp_order_id);
+        if (paid(order)) {
+          await reconcile(row);
+          return respond({ error: 'O pagamento já foi aprovado. Seu agendamento não foi cancelado.' }, 409);
+        }
+        if (!['canceled', 'cancelled', 'expired'].includes(order.status)) {
+          const cancelled = await fetch(`https://api.mercadopago.com/v1/orders/${encodeURIComponent(row.mp_order_id)}/cancel`, {
+            method: 'POST', headers: { Authorization: `Bearer ${mpToken}`, 'X-Idempotency-Key': row.id + '-cancel', 'Content-Type': 'application/json' },
+          });
+          if (!cancelled.ok) {
+            const latest = await mpOrder(row.mp_order_id);
+            if (!['canceled', 'cancelled', 'expired'].includes(latest.status)) return respond({ error: 'O Pix não pôde ser cancelado. Confira o pagamento e tente novamente.' }, 409);
+          }
+        }
+      }
+      const updated = await db(`appointments?id=eq.${row.id}&payment_status=neq.paid&status=in.(pending_payment,expired,cancelled)`, {
+        method: 'PATCH', headers: { Prefer: 'return=representation' },
+        body: JSON.stringify({ status: 'cancelled', cancelled_by_customer: true, updated_at: new Date().toISOString() }),
+      });
+      if (!updated.length) return respond({ error: 'A reserva mudou durante o cancelamento. Atualize para conferir.' }, 409);
+      return respond({ cancelled: true });
+    }
     if (action === 'status') {
       const reference = text(body.reference, 64);
       if (!/^[a-f0-9]{32}$/.test(reference)) return respond({ error: 'Código inválido.' }, 400);
@@ -181,7 +213,7 @@ Deno.serve(async (req) => {
         return respond({ settings: rows?.[0] || settings });
       }
       if (action === 'admin_list') {
-        const rows = await db('appointments?select=*&order=start_at.desc&limit=300');
+        const rows = await db('appointments?cancelled_by_customer=eq.false&select=*&order=start_at.desc&limit=300');
         return respond({ appointments: await Promise.all(rows.map(reconcile)) });
       }
       const id = text(body.id, 40), next = text(body.status, 30);
