@@ -8,6 +8,13 @@ type Closure = { date: string; professionalId: string; start?: string; end?: str
 type Settings = { weekly: Record<string, Window[]>; closures: Closure[] };
 const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 const hourlyWindows = (): Window[] => [9, 10, 11, 13, 14, 15, 16, 17, 18, 19].map(hour => ({ start: `${String(hour).padStart(2, '0')}:00`, end: `${String(hour + 1).padStart(2, '0')}:00` }));
+const toMinute = (value: string) => Number(value.slice(0, 2)) * 60 + Number(value.slice(3));
+const toTime = (value: number) => String(Math.floor(value / 60)).padStart(2, '0') + ':' + String(value % 60).padStart(2, '0');
+const splitHours = (windows: Window[]): Window[] => windows.flatMap(w => {
+  const slots: Window[] = [];
+  for (let minute = toMinute(w.start); minute + 60 <= toMinute(w.end); minute += 60) slots.push({ start: toTime(minute), end: toTime(minute + 60), closed: w.closed });
+  return slots;
+});
 const dayOpen = (windows: Window[] = []) => windows.some(w => !w.closed);
 const api = 'https://oyghjlwujdmgfkopujip.supabase.co/functions/v1/appointments';
 export const AdminAppointmentsPage: React.FC = () => {
@@ -17,6 +24,11 @@ export const AdminAppointmentsPage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [preset, setPreset] = useState({ start: '09:00', end: '20:00', lunchStart: '12:00', lunchEnd: '13:00' });
+  const [editingPreset, setEditingPreset] = useState(false);
+  const [addingDay, setAddingDay] = useState<number | null>(null);
+  const [extraStart, setExtraStart] = useState('20:00');
+  const [extraEnd, setExtraEnd] = useState('21:00');
   const [notice, setNotice] = useState('');
   const [blockDate, setBlockDate] = useState('');
   const [blockProfessional, setBlockProfessional] = useState('all');
@@ -34,6 +46,11 @@ export const AdminAppointmentsPage: React.FC = () => {
     try {
       const [agenda, configuration] = await Promise.all([call('admin_list'), call('admin_settings')]);
       setRows(agenda.appointments || []); setSettings(configuration.settings); setError('');
+      const monday = [...(configuration.settings.weekly['1'] || [])].sort((a: Window, b: Window) => a.start.localeCompare(b.start));
+      if (monday.length) {
+        const gap = monday.findIndex((w: Window, i: number) => i > 0 && monday[i - 1].end < w.start);
+        setPreset({ start: monday[0].start, end: monday[monday.length - 1].end, lunchStart: gap > 0 ? monday[gap - 1].end : '', lunchEnd: gap > 0 ? monday[gap].start : '' });
+      }
     }
     catch (e) { setError(e instanceof Error ? e.message : 'Falha ao carregar.'); }
     finally { setLoading(false); }
@@ -45,17 +62,41 @@ export const AdminAppointmentsPage: React.FC = () => {
     try { await call('admin_update', { id, status }); await refresh(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Falha ao atualizar.'); }
   };
-  const selectedHours = (day: number) => hourlyWindows().filter(slot => (settings?.weekly[day] || []).some(w => !w.closed && w.start <= slot.start && w.end >= slot.end));
+  const allWindows = Object.values<Window[]>(settings?.weekly || {}).flat();
+  const firstHour = allWindows.length ? allWindows.reduce((min, w) => w.start < min ? w.start : min, allWindows[0].start) : '--:--';
+  const lastHour = allWindows.length ? allWindows.reduce((max, w) => w.end > max ? w.end : max, allWindows[0].end) : '--:--';
   const setHours = (day: number, windows: Window[]) => setSettings(prev => prev ? { ...prev, weekly: { ...prev.weekly, [day]: windows } } : prev);
   const toggleHour = (day: number, slot: Window) => {
-    const current = selectedHours(day);
-    const selected = current.some(w => w.start === slot.start);
-    setHours(day, selected ? current.filter(w => w.start !== slot.start) : [...current, slot].sort((a, b) => a.start.localeCompare(b.start)));
+    const current = splitHours(settings?.weekly[day] || []);
+    setHours(day, current.map(w => w.start === slot.start ? { ...w, closed: !w.closed } : w));
   };
   const toggleSimpleDay = (day: number) => {
     const current = settings?.weekly[day] || [];
-    if (dayOpen(current)) setHours(day, current.map(w => ({ ...w, closed: true })));
-    else setHours(day, current.length ? current.map(w => ({ ...w, closed: false })) : hourlyWindows());
+    setHours(day, (current.length ? current : hourlyWindows()).map(w => ({ ...w, closed: dayOpen(current) })));
+  };
+  const applyPreset = () => {
+    if (!settings) return;
+    const begin = toMinute(preset.start), end = toMinute(preset.end);
+    const lunch = Boolean(preset.lunchStart || preset.lunchEnd);
+    const ls = toMinute(preset.lunchStart), le = toMinute(preset.lunchEnd);
+    if (!preset.start || !preset.end || begin >= end || (end - begin) % 60 !== 0 ||
+      (lunch && (!preset.lunchStart || !preset.lunchEnd || ls < begin || le > end || ls >= le || (ls - begin) % 60 !== 0 || (le - ls) % 60 !== 0))) {
+      setError('Use intervalos completos de 1 hora. O almoço deve ficar dentro do expediente.'); return;
+    }
+    const hours = splitHours([{ start: preset.start, end: preset.end }]).filter(w => !lunch || toMinute(w.end) <= ls || toMinute(w.start) >= le);
+    if (!hours.length) { setError('Inclua pelo menos um horário de atendimento.'); return; }
+    setSettings({ ...settings, weekly: { ...settings.weekly, ...Object.fromEntries([1,2,3,4,5,6].map(day => [String(day), hours.map(w => ({ ...w }))])) } });
+    setEditingPreset(false); setError(''); setNotice('Modelo aplicado de segunda a sábado. Toque em Salvar meus horários.');
+  };
+  const addExtraHours = (day: number) => {
+    const begin = toMinute(extraStart), end = toMinute(extraEnd);
+    if (!extraStart || !extraEnd || begin >= end || (end - begin) % 60 !== 0) { setError('Escolha início e fim em intervalos completos de 1 hora, no mesmo dia.'); return; }
+    const current = splitHours(settings?.weekly[day] || []);
+    const extra = splitHours([{ start: extraStart, end: extraEnd }]);
+    if (current.length + extra.length > 24) { setError('Você pode ter até 24 horários por dia.'); return; }
+    if (extra.some(w => current.some(c => w.start < c.end && w.end > c.start))) { setError('Esse intervalo já possui horários. Toque nos horários existentes para liberar ou bloquear.'); return; }
+    setHours(day, [...current, ...extra].sort((a, b) => a.start.localeCompare(b.start)));
+    setAddingDay(null); setError(''); setNotice('Horário adicionado. Toque em Salvar meus horários.');
   };
   const saveSettings = async () => {
     if (!settings) return;
@@ -79,16 +120,20 @@ export const AdminAppointmentsPage: React.FC = () => {
     {settings && tab !== 'reservas' && <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 sm:p-6 space-y-5">
       <div><h2 className="text-xl font-bold text-amber-400">{tab === 'horarios' ? 'Quando você vai atender?' : 'Precisa de uma folga?'}</h2><p className="text-sm text-zinc-300">{tab === 'horarios' ? 'Cada atendimento ocupa 1 hora. Toque no dia para abrir ou fechar e nos horários para liberar ou bloquear.' : 'Escolha o dia em que não vai atender. Você também pode bloquear só algumas horas.'}</p></div>
       {tab === 'horarios' && <>
-        <div className="rounded-xl bg-amber-400/10 p-4 text-sm text-amber-200"><strong>9h às 20h · 1 hora por cliente</strong><p className="mt-1">Almoço: 12h às 13h. Último atendimento: 19h às 20h.</p></div>
-        <button type="button" onClick={() => setSettings({ ...settings, weekly: { ...settings.weekly, ...Object.fromEntries([1,2,3,4,5,6].map(day => [String(day), hourlyWindows()])) } })} className="w-full rounded-xl border border-amber-400/50 px-4 py-3 font-semibold text-amber-300">Liberar todos os horários de segunda a sábado</button>
+        <div className="rounded-xl bg-amber-400/10 p-4 text-sm text-amber-200">
+          <div className="flex flex-wrap items-center justify-between gap-3"><strong>{firstHour} às {lastHour} · 1 hora por cliente</strong><button type="button" onClick={() => setEditingPreset(!editingPreset)} className="rounded-lg border border-amber-400/50 px-3 py-2 font-semibold">Editar expediente e almoço</button></div>
+          <p className="mt-2">Confira os horários de cada dia abaixo. Você pode acrescentar atendimentos após o expediente.</p>
+          {editingPreset && <div className="mt-4 space-y-3"><div className="grid grid-cols-2 gap-3">{([['start', 'Começo do expediente'], ['end', 'Fim do expediente'], ['lunchStart', 'Almoço: das'], ['lunchEnd', 'Almoço: até']] as const).map(([field, label]) => <label key={field} className="grid min-w-0 gap-1">{label}<input type="time" value={preset[field]} onChange={e => setPreset({ ...preset, [field]: e.target.value })} className="w-full min-w-0 rounded-lg border border-zinc-600 bg-zinc-950 p-3 text-white" /></label>)}</div><p className="text-xs">Para não fazer pausa, deixe os dois campos de almoço vazios.</p><button type="button" onClick={applyPreset} className="w-full rounded-lg bg-amber-400 p-3 font-bold text-black">Aplicar modelo de segunda a sábado</button></div>}
+        </div>
         <p className="text-sm text-zinc-400">Dourado = disponível. Cinza = bloqueado.</p>
         <div className="grid gap-4">{dayNames.map((name, day) => {
           const open = dayOpen(settings.weekly[day]);
-          const hours = selectedHours(day);
+          const hours = splitHours(settings.weekly[day] || []);
           return <section key={name} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-            <div className="flex items-center justify-between gap-3"><h3 className="font-bold text-lg">{name}</h3><button type="button" aria-pressed={open} onClick={() => toggleSimpleDay(day)} className={'rounded-lg px-4 py-2 text-sm font-bold ' + (open ? 'bg-emerald-800 text-white' : 'bg-zinc-800 text-zinc-300')}>{open ? 'Aberto' : 'Fechado'}</button></div>
-            {open ? <div className="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-2">{hourlyWindows().map(slot => {
-              const selected = hours.some(w => w.start === slot.start);
+            <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-bold text-lg">{name}</h3><div className="flex gap-2"><button type="button" onClick={() => { setAddingDay(addingDay === day ? null : day); setError(''); }} className="rounded-lg border border-amber-400/50 px-3 py-2 text-sm font-bold text-amber-300">+ Horário</button><button type="button" aria-pressed={open} onClick={() => toggleSimpleDay(day)} className={'rounded-lg px-4 py-2 text-sm font-bold ' + (open ? 'bg-emerald-800 text-white' : 'bg-zinc-800 text-zinc-300')}>{open ? 'Aberto' : 'Fechado'}</button></div></div>
+            {addingDay === day && <div className="mt-4 rounded-xl border border-zinc-700 p-3 space-y-3"><div className="grid grid-cols-2 gap-3"><label className="grid min-w-0 gap-1 text-sm">Das<input type="time" value={extraStart} onChange={e => setExtraStart(e.target.value)} className="w-full min-w-0 rounded-lg bg-zinc-900 p-3" /></label><label className="grid min-w-0 gap-1 text-sm">Até<input type="time" value={extraEnd} onChange={e => setExtraEnd(e.target.value)} className="w-full min-w-0 rounded-lg bg-zinc-900 p-3" /></label></div><button type="button" onClick={() => addExtraHours(day)} className="w-full rounded-lg bg-amber-400 p-3 font-bold text-black">Adicionar horário em {name}</button></div>}
+            {open ? <div className="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-2">{hours.map(slot => {
+              const selected = !slot.closed;
               return <button key={slot.start} type="button" aria-pressed={selected} aria-label={slot.start + ' até ' + slot.end + (selected ? ', disponível' : ', bloqueado')} onClick={() => toggleHour(day, slot)} className={'rounded-lg border py-3 px-2 text-sm font-bold ' + (selected ? 'border-amber-400 bg-amber-400 text-black' : 'border-zinc-700 bg-zinc-900 text-zinc-400')}>{slot.start} – {slot.end}</button>;
             })}</div> : <p className="mt-2 text-sm text-zinc-500">Sem atendimento neste dia.</p>}
           </section>;
