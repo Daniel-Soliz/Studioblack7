@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
 
-type Appointment = { id: string; service_name: string; professional_name: string; customer_name: string; customer_email: string; customer_phone: string; start_at: string; end_at: string; amount_cents: number; status: string; payment_status: string; payment_reference: string };
+type Appointment = { id: string; service_name: string; professional_name: string; customer_name: string; customer_email: string; customer_phone: string; start_at: string; end_at: string; amount_cents: number; service_total_cents?: number | null; status: string; payment_status: string; payment_reference: string };
 type Window = { start: string; end: string; closed?: boolean };
 type Closure = { date: string; professionalId: string; start?: string; end?: string };
 type Settings = { weekly: Record<string, Window[]>; closures: Closure[] };
@@ -161,7 +161,8 @@ export const AdminAppointmentsPage: React.FC = () => {
     {tab === 'reservas' && <><h2 className="text-xl font-bold">Seus clientes agendados</h2>
     <div className="grid gap-3">{confirmedRows.map(row => <article key={row.id} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 space-y-2">
       <div className="flex flex-wrap justify-between gap-2"><strong>{new Date(row.start_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })} · {row.service_name}</strong><span className={row.payment_status === 'paid' ? 'text-emerald-400' : 'text-amber-400'}>{({pending_payment: 'Aguardando Pix', confirmed: 'Confirmado', completed: 'Atendido', cancelled: 'Cancelado', expired: 'Reserva vencida'} as Record<string,string>)[row.status] || row.status}</span></div>
-      <p className="text-sm text-zinc-300">{row.professional_name} · R$ {(row.amount_cents / 100).toFixed(2).replace('.', ',')}</p>
+      <p className="text-sm text-zinc-300">{row.professional_name} · Pix recebido: R$ {(row.amount_cents / 100).toFixed(2).replace('.', ',')}</p>
+      {(row.service_total_cents ?? row.amount_cents) > row.amount_cents && <p className="text-sm font-semibold text-amber-300">Entrada de 50% · Restante no atendimento: R$ {(((row.service_total_cents ?? row.amount_cents) - row.amount_cents) / 100).toFixed(2).replace('.', ',')}</p>}
       <p className="break-words text-sm text-zinc-300">{row.customer_name} · {row.customer_phone} · {row.customer_email}</p>
       <p className="break-all text-xs text-zinc-500">Código: {row.payment_reference}</p>
       {row.status === 'confirmed' && <div className="flex gap-2"><button onClick={() => change(row.id, 'completed')} className="rounded-lg bg-emerald-700 px-3 py-2 text-sm">Concluir</button><button onClick={() => change(row.id, 'cancelled')} className="rounded-lg bg-zinc-700 px-3 py-2 text-sm">Cancelar</button></div>}
