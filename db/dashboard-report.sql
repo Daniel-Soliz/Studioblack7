@@ -1,3 +1,6 @@
+-- Customer cancellation hides unpaid bookings from the operational admin agenda.
+alter table public.appointments add column if not exists cancelled_by_customer boolean not null default false;
+
 -- Half payments: keep charge separate from full service price.
 alter table public.appointments add column if not exists service_total_cents integer;
 
