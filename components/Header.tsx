@@ -60,10 +60,10 @@ export const Header: React.FC = () => {
         {/* Brand Logo with round mascot/emblem */}
         <Link
           to="/"
-          className="flex items-center gap-3 group focus:outline-none"
+          className="flex min-w-0 items-center gap-2 sm:gap-3 group focus:outline-none"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
-          <div className="w-16 h-16 sm:w-[76px] sm:h-[76px] shrink-0 flex items-center justify-center">
+          <div className="w-11 h-11 sm:w-[76px] sm:h-[76px] shrink-0 flex items-center justify-center">
             <img
               src={settings.logoUrl && settings.logoUrl !== '/images/ray_logo.png' ? getAssetUrl(settings.logoUrl) : STUDIO_BLACK_LOGO}
               alt="Studio Black7"
@@ -76,11 +76,11 @@ export const Header: React.FC = () => {
             <span className="font-['Cinzel'] font-black text-amber-400 text-2xl hidden fallback-mark">7</span>
           </div>
 
-          <div className="flex flex-col">
-            <span className="font-['Cinzel'] font-black text-base sm:text-lg tracking-widest text-white group-hover:text-amber-300 transition-colors">
+          <div className="flex min-w-0 flex-col">
+            <span className="font-['Cinzel'] font-black text-xs sm:text-lg tracking-wide sm:tracking-widest text-white group-hover:text-amber-300 transition-colors">
               {settings.companyName || 'STUDIO BLACK7'}
             </span>
-            <span className="text-[10px] uppercase tracking-[0.22em] text-amber-400/90 font-semibold">
+            <span className="text-[8px] sm:text-[10px] uppercase tracking-wide sm:tracking-[0.22em] text-amber-400/90 font-semibold">
               Barbearia Premium · ZN SP
             </span>
           </div>
