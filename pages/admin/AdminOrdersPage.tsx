@@ -21,7 +21,7 @@ import { Order } from '../../types';
 export const AdminOrdersPage: React.FC = () => {
   const { orders, updateOrderStatus, saveOrder, deleteOrder } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('active');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [feedback, setFeedback] = useState('');
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
@@ -36,20 +36,23 @@ export const AdminOrdersPage: React.FC = () => {
       if (!matchNum && !matchName && !matchPhone) return false;
     }
 
-    if (statusFilter !== 'all' && o.status !== statusFilter) {
+    if (statusFilter === 'active' && o.status === 'cancelled') return false;
+    if (!['all','active'].includes(statusFilter) && o.status !== statusFilter) {
       return false;
     }
 
     return true;
   });
 
-  const handleUpdateStatus = (orderId: string, status: Order['status'], payment?: Order['paymentStatus']) => {
-    updateOrderStatus(orderId, status, payment);
+  const handleUpdateStatus = async (orderId: string, status: Order['status'], payment?: Order['paymentStatus']) => {
+    try {
+    await updateOrderStatus(orderId, status, payment);
     setFeedback(`Status do pedido atualizado com sucesso.`);
     if (selectedOrder && selectedOrder.id === orderId) {
       setSelectedOrder(prev => prev ? { ...prev, status, paymentStatus: payment || prev.paymentStatus } : null);
     }
     setTimeout(() => setFeedback(''), 3000);
+    } catch (error) { setFeedback(error instanceof Error ? error.message : 'Não foi possível atualizar o pedido.'); }
   };
 
   const emptyOrder = (): Order => {
@@ -84,7 +87,7 @@ export const AdminOrdersPage: React.FC = () => {
     };
   };
 
-  const handleSaveOrder = () => {
+  const handleSaveOrder = async () => {
     if (!editingOrder) return;
     if (!editingOrder.customer.name.trim() || !editingOrder.customer.phone.trim()) {
       setFeedback('Preencha pelo menos o nome e o telefone do cliente.');
@@ -94,12 +97,14 @@ export const AdminOrdersPage: React.FC = () => {
     const subtotal = Number(editingOrder.subtotal) || 0;
     const shipping = Number(editingOrder.shipping) || 0;
     const total = Number(editingOrder.total) || subtotal + shipping;
-    const saved = saveOrder({ ...editingOrder, subtotal, shipping, total });
+    try {
+    const saved = await saveOrder({ ...editingOrder, subtotal, shipping, total });
     setEditingOrder(null);
     setIsCreating(false);
     setSelectedOrder(saved);
     setFeedback(isCreating ? 'Pedido adicionado com sucesso.' : 'Pedido editado com sucesso.');
     setTimeout(() => setFeedback(''), 3000);
+    } catch (error) { setFeedback(error instanceof Error ? error.message : 'Não foi possível salvar o pedido.'); }
   };
 
   const handleDeleteOrder = async (order: Order) => {
@@ -183,6 +188,7 @@ export const AdminOrdersPage: React.FC = () => {
               className="px-3 py-2 rounded-xl bg-black/50 border border-zinc-750 text-xs text-zinc-200 focus:border-amber-400 focus:outline-none"
             >
               <option value="all">Todos os Status</option>
+              <option value="active">Pedidos ativos e concluídos</option>
               <option value="pending">Pendente</option>
               <option value="confirmed">Confirmado</option>
               <option value="preparing">Em Preparação</option>
@@ -283,8 +289,9 @@ export const AdminOrdersPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleDeleteOrder(order)}
+                            disabled={order.paymentStatus === 'paid'}
                             className="p-2 rounded-lg bg-zinc-800 hover:bg-red-600 text-zinc-200 transition-colors"
-                            title="Excluir pedido"
+                            title={order.paymentStatus === 'paid' ? 'Histórico financeiro preservado' : 'Excluir pedido'}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -307,7 +314,7 @@ export const AdminOrdersPage: React.FC = () => {
                   <h3 className="font-['Cinzel'] font-bold text-lg text-white">
                     {isCreating ? 'Adicionar Pedido' : `Editar Pedido #${editingOrder.orderNumber}`}
                   </h3>
-                  <p className="text-xs text-zinc-500 mt-1">Edite os dados do cliente, status e valores do pedido.</p>
+                  <p className="text-xs text-zinc-500 mt-1">{editingOrder.paymentMethod === 'Pix Mercado Pago' ? 'Edite o contato e as observações. Valores e confirmação do Pix são protegidos pelo servidor. Altere a preparação nos detalhes do pedido.' : 'Edite os dados do cliente, status e valores do pedido.'}</p>
                 </div>
                 <button type="button" onClick={() => setEditingOrder(null)} className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white">
                   <X className="w-5 h-5" />
@@ -317,7 +324,7 @@ export const AdminOrdersPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="space-y-1.5">
                   <span className="text-xs font-bold text-zinc-400">Número do pedido</span>
-                  <input value={editingOrder.orderNumber} onChange={e => setEditingOrder({...editingOrder, orderNumber: e.target.value})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                  <input disabled={editingOrder.paymentMethod === 'Pix Mercado Pago'} value={editingOrder.orderNumber} onChange={e => setEditingOrder({...editingOrder, orderNumber: e.target.value})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
                 </label>
                 <label className="space-y-1.5">
                   <span className="text-xs font-bold text-zinc-400">Cliente</span>
@@ -334,7 +341,7 @@ export const AdminOrdersPage: React.FC = () => {
 
                 <label className="space-y-1.5">
                   <span className="text-xs font-bold text-zinc-400">Status do pedido</span>
-                  <select value={editingOrder.status} onChange={e => setEditingOrder({...editingOrder, status:e.target.value as Order['status']})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none">
+                  <select disabled={editingOrder.paymentMethod === 'Pix Mercado Pago'} value={editingOrder.status} onChange={e => setEditingOrder({...editingOrder, status:e.target.value as Order['status']})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none">
                     <option value="pending">Pendente</option>
                     <option value="confirmed">Confirmado</option>
                     <option value="processing">Processando</option>
@@ -346,7 +353,7 @@ export const AdminOrdersPage: React.FC = () => {
                 </label>
                 <label className="space-y-1.5">
                   <span className="text-xs font-bold text-zinc-400">Pagamento</span>
-                  <select value={editingOrder.paymentStatus} onChange={e => setEditingOrder({...editingOrder, paymentStatus:e.target.value as Order['paymentStatus']})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none">
+                  <select disabled={editingOrder.paymentMethod === 'Pix Mercado Pago'} value={editingOrder.paymentStatus} onChange={e => setEditingOrder({...editingOrder, paymentStatus:e.target.value as Order['paymentStatus']})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none">
                     <option value="pending">Pendente</option>
                     <option value="paid">Pago</option>
                     <option value="failed">Falhou</option>
@@ -356,23 +363,23 @@ export const AdminOrdersPage: React.FC = () => {
 
                 <label className="space-y-1.5">
                   <span className="text-xs font-bold text-zinc-400">Subtotal (R$)</span>
-                  <input type="number" min="0" step="0.01" value={editingOrder.subtotal} onChange={e => setEditingOrder({...editingOrder, subtotal:Number(e.target.value)})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                  <input type="number" min="0" step="0.01" disabled={editingOrder.paymentMethod === 'Pix Mercado Pago'} value={editingOrder.subtotal} onChange={e => setEditingOrder({...editingOrder, subtotal:Number(e.target.value)})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
                 </label>
                 <label className="space-y-1.5">
                   <span className="text-xs font-bold text-zinc-400">Frete (R$)</span>
-                  <input type="number" min="0" step="0.01" value={editingOrder.shipping} onChange={e => setEditingOrder({...editingOrder, shipping:Number(e.target.value)})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                  <input type="number" min="0" step="0.01" disabled={editingOrder.paymentMethod === 'Pix Mercado Pago'} value={editingOrder.shipping} onChange={e => setEditingOrder({...editingOrder, shipping:Number(e.target.value)})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
                 </label>
                 <label className="space-y-1.5">
                   <span className="text-xs font-bold text-zinc-400">Total (R$)</span>
-                  <input type="number" min="0" step="0.01" value={editingOrder.total} onChange={e => setEditingOrder({...editingOrder, total:Number(e.target.value)})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                  <input type="number" min="0" step="0.01" disabled={editingOrder.paymentMethod === 'Pix Mercado Pago'} value={editingOrder.total} onChange={e => setEditingOrder({...editingOrder, total:Number(e.target.value)})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
                 </label>
                 <label className="space-y-1.5">
                   <span className="text-xs font-bold text-zinc-400">Forma de pagamento</span>
-                  <input value={editingOrder.paymentMethod} onChange={e => setEditingOrder({...editingOrder, paymentMethod:e.target.value})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                  <input disabled={editingOrder.paymentMethod === 'Pix Mercado Pago'} value={editingOrder.paymentMethod} onChange={e => setEditingOrder({...editingOrder, paymentMethod:e.target.value})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
                 </label>
                 <label className="space-y-1.5 sm:col-span-2">
                   <span className="text-xs font-bold text-zinc-400">Entrega / retirada</span>
-                  <input value={editingOrder.shippingMethod} onChange={e => setEditingOrder({...editingOrder, shippingMethod:e.target.value})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+                  <input disabled={editingOrder.paymentMethod === 'Pix Mercado Pago'} value={editingOrder.shippingMethod} onChange={e => setEditingOrder({...editingOrder, shippingMethod:e.target.value})} className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
                 </label>
                 <label className="space-y-1.5 sm:col-span-2">
                   <span className="text-xs font-bold text-zinc-400">Observações</span>
