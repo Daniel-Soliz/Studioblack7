@@ -22,6 +22,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { getAssetUrl } from '../../utils';
 import { AdminSecurityService } from '../../services/adminSecurityService';
+import { CloudSyncNotice } from './CloudSyncNotice';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -88,6 +89,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
 
   return (
     <div className="min-h-screen bg-[#09090d] text-zinc-100 flex flex-col md:flex-row">
+      <CloudSyncNotice />
       {/* Desktop Sidebar */}
       <aside className="w-64 bg-[#0c0c12] border-r border-zinc-850 p-5 flex flex-col justify-between shrink-0 hidden md:flex">
         <div className="space-y-6">
