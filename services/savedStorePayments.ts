@@ -12,6 +12,10 @@ export function readStorePayments(): SavedStorePayment[] {
 }
 export function rememberStorePayment(record: SavedStorePayment) {
   localStorage.setItem(KEY, JSON.stringify([record, ...readStorePayments().filter(r => r.order.id !== record.order.id)].slice(0, 20)));
+  try {
+    const draft = JSON.parse(localStorage.getItem('sb7-store-checkout-request') || 'null');
+    if (draft?.id === record.pix.externalReference) localStorage.removeItem('sb7-store-checkout-request');
+  } catch { /* Keep the saved purchase. */ }
   window.dispatchEvent(new Event(STORE_PAYMENTS_EVENT));
 }
 export function removeStorePayment(id: string) {
