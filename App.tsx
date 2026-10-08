@@ -1,9 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, StoreProvider, CartProvider } from './context';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
-import { BookingPage } from './pages/BookingPage';
-import { AdminAppointmentsPage } from './pages/admin/AdminAppointmentsPage';
+import { InstallApp } from './components/InstallApp';
+import { PrivacyPage } from './pages/PrivacyPage';
+const BookingPage = lazy(() => import('./pages/BookingPage').then(m => ({ default: m.BookingPage })));
+const AdminAppointmentsPage = lazy(() => import('./pages/admin/AdminAppointmentsPage').then(m => ({ default: m.AdminAppointmentsPage })));
 
 // Public Pages
 import {
@@ -18,24 +20,22 @@ import {
   ContactPage,
 } from './pages';
 
-// Admin Pages
-import {
-  AdminLoginPage,
-  AdminDashboardPage,
-  AdminAccessPage,
-  AdminProductsPage,
-  AdminProductFormPage,
-  AdminInventoryPage,
-  AdminOrdersPage,
-  AdminCategoriesPage,
-  AdminServicesPage,
-  AdminSiteImagesPage,
-  AdminContentPage,
-  AdminContactPage,
-  AdminLocationPage,
-  AdminHoursPage,
-  AdminSettingsPage,
-} from './pages/admin';
+// Load administrative screens only when they are used.
+const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage').then(m => ({ default: m.AdminLoginPage })));
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })));
+const AdminAccessPage = lazy(() => import('./pages/admin/AdminAccessPage').then(m => ({ default: m.AdminAccessPage })));
+const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage').then(m => ({ default: m.AdminProductsPage })));
+const AdminProductFormPage = lazy(() => import('./pages/admin/AdminProductFormPage').then(m => ({ default: m.AdminProductFormPage })));
+const AdminInventoryPage = lazy(() => import('./pages/admin/AdminInventoryPage').then(m => ({ default: m.AdminInventoryPage })));
+const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage').then(m => ({ default: m.AdminOrdersPage })));
+const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage').then(m => ({ default: m.AdminCategoriesPage })));
+const AdminServicesPage = lazy(() => import('./pages/admin/AdminServicesPage').then(m => ({ default: m.AdminServicesPage })));
+const AdminSiteImagesPage = lazy(() => import('./pages/admin/AdminSiteImagesPage').then(m => ({ default: m.AdminSiteImagesPage })));
+const AdminContentPage = lazy(() => import('./pages/admin/AdminContentPage').then(m => ({ default: m.AdminContentPage })));
+const AdminContactPage = lazy(() => import('./pages/admin/AdminContactPage').then(m => ({ default: m.AdminContactPage })));
+const AdminLocationPage = lazy(() => import('./pages/admin/AdminLocationPage').then(m => ({ default: m.AdminLocationPage })));
+const AdminHoursPage = lazy(() => import('./pages/admin/AdminHoursPage').then(m => ({ default: m.AdminHoursPage })));
+const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage').then(m => ({ default: m.AdminSettingsPage })));
 
 // Automatically scroll to top on route change
 function ScrollToTop() {
@@ -78,6 +78,8 @@ export default function App() {
         <CartProvider>
           <BrowserRouter basename={import.meta.env.BASE_URL}>
             <ScrollToTop />
+            <InstallApp />
+            <Suspense fallback={<div role="status" className="min-h-screen bg-zinc-950 text-amber-300 grid place-items-center">Carregando Studio Black7…</div>}>
             <Routes>
               {/* Public Website Routes */}
               <Route path="/" element={<HomePage />} />
@@ -86,6 +88,7 @@ export default function App() {
               <Route path="/agendar" element={<BookingPage />} />
               <Route path="/localizacao" element={<LocationPage />} />
               <Route path="/contato" element={<ContactPage />} />
+              <Route path="/privacidade" element={<PrivacyPage />} />
 
               {/* Store & Checkout Routes */}
               <Route path="/loja" element={<StorePage />} />
@@ -116,6 +119,7 @@ export default function App() {
               {/* Catch-all Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </Suspense>
           </BrowserRouter>
         </CartProvider>
       </StoreProvider>
