@@ -4,8 +4,10 @@ import { ShieldCheck, Lock, Mail, ArrowLeft, AlertCircle, KeyRound } from 'lucid
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { getAssetUrl } from '../../utils';
+import { AdminRecovery } from '../../components/admin/AdminRecovery';
 
 export const AdminLoginPage: React.FC = () => {
+  const [recovering, setRecovering] = useState(() => new URLSearchParams(window.location.hash.slice(1)).has('recovery'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -66,7 +68,7 @@ export const AdminLoginPage: React.FC = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {recovering ? <AdminRecovery onClose={() => {setRecovering(false); setError('');}} /> : <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-zinc-300 uppercase mb-1.5">
                 E-mail ou usuário do Administrador
@@ -102,7 +104,7 @@ export const AdminLoginPage: React.FC = () => {
               <div className="mt-2 flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setError('A recuperação de senha por e-mail/SMS está sendo configurada com segurança. Assim que o envio estiver ativo, esta opção permitirá redefinir a senha sem precisar de suporte.')}
+                  onClick={() => {setError('');setRecovering(true);}}
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 hover:text-amber-300 transition-colors"
                 >
                   <KeyRound className="w-3.5 h-3.5" />
@@ -118,7 +120,7 @@ export const AdminLoginPage: React.FC = () => {
             >
               {loading ? 'Validando Credenciais...' : 'Entrar no Sistema'}
             </button>
-          </form>
+          </form>}
 
           <div className="pt-4 border-t border-zinc-800 text-center">
             <Link
