@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Product, CartItem } from '../types';
+import { useStore } from './StoreContext';
+const shippingPrices: Record<string, number> = { 'Retirada no Studio Black7 (Gratuita)': 0, 'Entrega Expressa Zona Norte': 15, 'Envio Padrão São Paulo Capital': 25 };
 
 interface CartContextType {
   cart: CartItem[];
@@ -23,14 +25,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem(CART_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
+      const value = saved ? JSON.parse(saved) : [];
+      return Array.isArray(value) ? value.filter(item => item?.product?.id && Number.isInteger(item.quantity) && item.quantity > 0) : [];
     } catch {
       return [];
     }
   });
 
-  const [shippingMethod, setShippingMethodState] = useState<string>('Retirada no Studio Black7 (Gratuita)');
-  const [shippingCost, setShippingCost] = useState<number>(0);
+  const [shippingMethod, setShippingMethodState] = useState<string>(() => { try { const saved = localStorage.getItem('sb7-cart-shipping'); return saved && saved in shippingPrices ? saved : 'Retirada no Studio Black7 (Gratuita)'; } catch { return 'Retirada no Studio Black7 (Gratuita)'; } });
+  const shippingCost = shippingPrices[shippingMethod] || 0;
+  const { products } = useStore();
+  const cartRef = useRef(cart);
+  const commitCart = (next: CartItem[]) => { cartRef.current = next; setCart(next); };
+  useEffect(() => {
+    if (!products.length) return;
+    const next = cartRef.current.map(item => ({ ...item, product: products.find(p => p.id === item.product.id) || { ...item.product, status: 'inactive' as const, stock: 0 } }));
+    if (JSON.stringify(next) !== JSON.stringify(cartRef.current)) commitCart(next);
+  }, [products]);
 
   useEffect(() => {
     try {
@@ -41,42 +52,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [cart]);
 
   const addToCart = (product: Product, quantity = 1): { success: boolean; message: string } => {
-    if (product.stock <= 0 || product.status === 'out_of_stock') {
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) return { success: false, message: 'Escolha entre 1 e 20 unidades.' };
+    if (product.stock <= 0 || product.status !== 'active') {
       return { success: false, message: 'Este produto está esgotado no momento.' };
     }
 
-    let addedSuccessfully = true;
-    let feedback = '';
-
-    setCart(prev => {
+    const prev = cartRef.current;
       const existing = prev.find(item => item.product.id === product.id);
-      if (existing) {
-        const nextQty = existing.quantity + quantity;
-        if (nextQty > product.stock) {
-          addedSuccessfully = false;
-          feedback = `Quantidade máxima disponível em estoque: ${product.stock} un.`;
-          return prev;
-        }
-        feedback = `${product.name} adicionado ao carrinho!`;
-        return prev.map(item =>
-          item.product.id === product.id ? { ...item, quantity: nextQty } : item
-        );
-      } else {
-        if (quantity > product.stock) {
-          addedSuccessfully = false;
-          feedback = `Quantidade solicitada indisponível. Estoque atual: ${product.stock} un.`;
-          return prev;
-        }
-        feedback = `${product.name} adicionado ao carrinho!`;
-        return [...prev, { product, quantity }];
-      }
-    });
-
-    return { success: addedSuccessfully, message: feedback };
+      const nextQty = (existing?.quantity || 0) + quantity;
+      if (nextQty > Math.min(product.stock,20)) return { success: false, message: `Quantidade máxima disponível: ${Math.min(product.stock,20)} un.` };
+      commitCart(existing ? prev.map(item => item.product.id === product.id ? { product, quantity: nextQty } : item) : [...prev,{ product, quantity }]);
+      return { success: true, message: `${product.name} adicionado ao carrinho!` };
   };
 
   const removeFromCart = (productId: string) => {
-    setCart(prev => prev.filter(item => item.product.id !== productId));
+    commitCart(cartRef.current.filter(item => item.product.id !== productId));
   };
 
   const updateQuantity = (productId: string, quantity: number): { success: boolean; message?: string } => {
@@ -85,33 +75,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: true };
     }
 
-    let ok = true;
-    let msg = '';
-
-    setCart(prev =>
-      prev.map(item => {
-        if (item.product.id === productId) {
-          if (quantity > item.product.stock) {
-            ok = false;
-            msg = `Estoque máximo: ${item.product.stock} unidades.`;
-            return { ...item, quantity: item.product.stock };
-          }
-          return { ...item, quantity };
-        }
-        return item;
-      })
-    );
-
-    return { success: ok, message: msg };
+    const item = cartRef.current.find(item => item.product.id === productId);
+    if (!item || !Number.isInteger(quantity) || quantity > Math.min(item.product.stock,20)) return { success: false, message: `Estoque máximo: ${Math.min(item?.product.stock || 0,20)} unidades.` };
+    commitCart(cartRef.current.map(item => item.product.id === productId ? { ...item, quantity } : item));
+    return { success: true };
   };
 
   const clearCart = () => {
-    setCart([]);
+    commitCart([]);
   };
 
   const setShippingMethod = (method: string, cost: number) => {
+    if (!(method in shippingPrices)) return;
     setShippingMethodState(method);
-    setShippingCost(cost);
+    try { localStorage.setItem('sb7-cart-shipping', method); } catch { /* Keep the selected method for this visit. */ }
   };
 
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
