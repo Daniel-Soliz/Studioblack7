@@ -47,6 +47,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSession(null);
   };
 
+  useEffect(() => {
+    if (!session) return;
+    const timer = window.setTimeout(() => { AuthService.logout(); setSession(null); }, Math.max(0, session.expiresAt - Date.now()));
+    const check = () => { if (!AuthService.getSession()) setSession(null); };
+    window.addEventListener('focus', check); window.addEventListener('storage', check);
+    return () => { window.clearTimeout(timer); window.removeEventListener('focus', check); window.removeEventListener('storage', check); };
+  }, [session]);
+
   return (
     <AuthContext.Provider
       value={{
