@@ -82,6 +82,7 @@ async function reconcile(row: any) {
     try {
       const order = await mpOrder(row.mp_order_id);
       if (paid(order)) {
+        if (Math.round(Number(order.total_paid_amount ?? order.total_amount) * 100) !== row.amount_cents) return row;
         const changed = await db(`appointments?id=eq.${row.id}&status=eq.pending_payment`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ status: 'confirmed', payment_status: 'paid', updated_at: new Date().toISOString() }) });
         return changed?.[0] || row;
       }
@@ -114,6 +115,18 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const action = text(body.action, 30);
+    if (action === 'public_hours') {
+      const settings = await loadSettings();
+      return respond({ weekly: settings.weekly });
+    }
+    if (action === 'provider_sync' || action === 'provider_sync_all') {
+      if (req.headers.get('authorization') !== `Bearer ${secret}`) return respond({ error: 'Acesso negado.' }, 401);
+      const id = text(body.orderId, 80);
+      if (action === 'provider_sync' && !/^ORD[A-Z0-9]+$/i.test(id)) return respond({ error: 'Pedido inválido.' }, 400);
+      const rows = await db(action === 'provider_sync' ? `appointments?mp_order_id=eq.${encodeURIComponent(id)}&status=eq.pending_payment&select=*` : 'appointments?status=eq.pending_payment&select=*&order=updated_at.asc&limit=20');
+      const result = await Promise.allSettled(rows.map(reconcile));
+      return respond({ ok: true, checked: result.length, failed: result.filter(r => r.status === 'rejected').length });
+    }
     if (action === 'track_access') {
       if (req.headers.get('origin') !== 'https://daniel-soliz.github.io') return respond({ error: 'Origem inválida.' }, 403);
       const sessionId = text(body.sessionId, 40), visitorId = text(body.visitorId, 40);
@@ -126,7 +139,7 @@ Deno.serve(async (req) => {
       const date = text(body.date, 10), professional = text(body.professionalId, 60);
       if (!professionals.some(p => p.id === professional) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return respond({ error: 'Seleção inválida.' }, 400);
       const settings = await loadSettings();
-      const rows = await db(`appointments?professional_id=eq.${professional}&start_at=gte.${date}T00:00:00-03:00&start_at=lt.${date}T23:59:59-03:00&status=in.(pending_payment,confirmed,completed)&select=id,start_at,end_at,status,hold_expires_at,mp_order_id`);
+      const rows = await db(`appointments?professional_id=eq.${professional}&start_at=gte.${date}T00:00:00-03:00&start_at=lt.${date}T23:59:59-03:00&status=in.(pending_payment,confirmed,completed)&select=id,start_at,end_at,status,hold_expires_at,mp_order_id,amount_cents`);
       const active = await Promise.all(rows.map(reconcile));
       return respond({ busy: active.filter((r: any) => ['pending_payment', 'confirmed', 'completed'].includes(r.status)).map((r: any) => ({ start: r.start_at, end: r.end_at })), intervals: intervals(settings, date, professional), closures: settings.closures.filter(c => c.date === date && (c.professionalId === 'all' || c.professionalId === professional)) });
     }
