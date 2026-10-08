@@ -93,11 +93,11 @@ export const AdminSettingsPage: React.FC = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const content = event.target?.result as string;
-      const res = importData(content);
+      const res = await importData(content);
       if (res.success) {
-        setFeedback('Backup restaurado com sucesso! Todos os serviços, produtos e fotos foram carregados.');
+        setFeedback(res.message);
         setFormData(settings);
       } else {
         setErrorMsg(res.message);
@@ -111,9 +111,9 @@ export const AdminSettingsPage: React.FC = () => {
   };
 
   const handleReset = () => {
-    if (window.confirm('ATENÇÃO: Deseja redefinir todos os dados para os padrões de fábrica do Studio Black7?')) {
+    if (window.confirm('Atualizar os dados deste dispositivo com o catálogo do servidor? Pedidos e agendamentos serão preservados.')) {
       resetDefaults();
-      setFeedback('Todos os dados foram redefinidos para os padrões originais com sucesso.');
+      setFeedback('Atualizando com os dados do servidor.');
       setTimeout(() => setFeedback(''), 3500);
     }
   };
@@ -506,7 +506,7 @@ export const AdminSettingsPage: React.FC = () => {
               Zona de Perigo
             </span>
             <p className="text-[11px] text-zinc-400">
-              Redefine todos os serviços, produtos, galeria e configurações para o estado original de fábrica.
+              Atualiza este dispositivo com os dados reais do servidor, preservando pedidos e agendamentos.
             </p>
           </div>
 
@@ -515,7 +515,7 @@ export const AdminSettingsPage: React.FC = () => {
             onClick={handleReset}
             className="px-4 py-2.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/40 text-red-300 text-xs font-bold transition-colors cursor-pointer"
           >
-            Redefinir Padrões de Fábrica
+            Atualizar dados do servidor
           </button>
         </div>
 
