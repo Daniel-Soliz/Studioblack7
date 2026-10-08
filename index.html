@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#08080a" />
-    <link rel="manifest" href="/Studioblack7/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/Studioblack7/icon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Black7" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -22,7 +22,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="/Studioblack7/icon-192.png" />
+    <link rel="icon" type="image/png" href="/icon-192.png" />
     <script type="text/javascript">
       // Single Page Apps for GitHub Pages
       // MIT License
@@ -36,6 +36,12 @@
               l.pathname.slice(0, -1) + decoded + l.hash
           );
         }
+        if (l.hostname === 'studioblack7.com.br' || l.hostname === 'www.studioblack7.com.br') {
+          var oldPrefix = '/Studioblack7';
+          if (l.pathname === oldPrefix || l.pathname.indexOf(oldPrefix + '/') === 0) {
+            window.history.replaceState(null, null, (l.pathname.slice(oldPrefix.length) || '/') + l.search + l.hash);
+          }
+        }
       }(window.location))
     </script>
     <script type="application/ld+json">
@@ -43,7 +49,7 @@
       "@context": "https://schema.org",
       "@type": "BarberShop",
       "name": "Studio Black7",
-      "image": "https://daniel-soliz.github.io/Studioblack7/images/ray_barber_1789410748280.jpg",
+      "image": "https://studioblack7.com.br/images/ray_barber_1789410748280.jpg",
       "telephone": "+55 11 98726-7087",
       "description": "Barbearia premium na Zona Norte de São Paulo. Cortes, barba, penteados, química, coloração e produtos masculinos.",
       "address": {
