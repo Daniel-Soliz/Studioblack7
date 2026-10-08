@@ -11,6 +11,8 @@ import {
 } from '../types';
 import { StorageService } from '../services/storageService';
 import { CloudStoreService } from '../services/cloudStoreService';
+import { useAuth } from './AuthContext';
+import { describeHours, WeekWindows } from '../services/businessHours';
 
 interface StoreContextType {
   products: Product[];
@@ -30,19 +32,19 @@ interface StoreContextType {
   saveGallery: (items: GalleryItem[]) => void;
   saveContent: (c: SiteContent) => void;
   saveSettings: (s: SiteSettings) => void;
-  updateOrderStatus: (orderId: string, status: Order['status'], paymentStatus?: Order['paymentStatus']) => boolean;
-  saveOrder: (order: Order) => Order;
+  updateOrderStatus: (orderId: string, status: Order['status'], paymentStatus?: Order['paymentStatus']) => Promise<boolean>;
+  saveOrder: (order: Order) => Promise<Order>;
   deleteOrder: (orderId: string) => Promise<boolean>;
-  createOrder: (order: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'>) => Order;
   logActivity: (action: string, detail: string) => void;
   exportData: () => string;
-  importData: (jsonString: string) => { success: boolean; message: string };
+  importData: (jsonString: string) => Promise<{ success: boolean; message: string }>;
   resetDefaults: () => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { session } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategoryItem[]>([]);
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -52,6 +54,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [orders, setOrders] = useState<Order[]>([]);
   const orderSync = useRef<Promise<void>>(Promise.resolve());
   const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [agendaHours, setAgendaHours] = useState<WeekWindows | null>(null);
+  useEffect(() => {
+    let active = true;
+    const load = () => fetch('https://oyghjlwujdmgfkopujip.supabase.co/functions/v1/appointments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'public_hours' }) }).then(r => r.ok ? r.json() : null).then(data => { if (active && data?.weekly) setAgendaHours(data.weekly); }).catch(() => {});
+    void load(); window.addEventListener('focus', load);
+    const timer = window.setInterval(load, 30000);
+    return () => { active = false; window.removeEventListener('focus', load); window.clearInterval(timer); };
+  }, []);
 
   const refreshData = useCallback(() => {
     setProducts(StorageService.getProducts());
@@ -60,12 +70,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setGallery(StorageService.getGallery());
     setContent(StorageService.getContent());
     setSettings(StorageService.getSettings());
-    setOrders(StorageService.getOrders());
-    setActivities(StorageService.getActivities());
-  }, []);
+    setOrders(session ? StorageService.getOrders() : []);
+    setActivities(session ? StorageService.getActivities() : []);
+  }, [session?.token]);
 
   useEffect(() => {
     refreshData();
+    if (!session) { StorageService.saveOrders([]); setOrders([]); }
     let active = true;
 
     CloudStoreService.loadAll()
@@ -211,33 +222,26 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     refreshData();
   };
 
-  const updateOrderStatus = (orderId: string, status: Order['status'], paymentStatus?: Order['paymentStatus']) => {
-    const res = StorageService.updateOrderStatus(orderId, status, paymentStatus);
-    if (res && status === 'cancelled') {
-      void CloudStoreService.save('products', StorageService.getProducts()).catch(error => console.error('Falha ao sincronizar estoque:', error));
-    }
+  const updateOrderStatus = async (orderId: string, status: Order['status'], paymentStatus?: Order['paymentStatus']) => {
+    await CloudStoreService.order('status', orderId, { status, ...(paymentStatus ? { paymentStatus } : {}) });
     StorageService.logActivity('Status de Pedido Alterado', `Pedido ${orderId} atualizado para: ${status}.`);
-    orderSync.current = CloudStoreService.save('orders', StorageService.getOrders());
-    void orderSync.current.catch((error) => console.error('Falha ao sincronizar pedidos:', error));
-    refreshData();
-    return res;
+    const cloud = await CloudStoreService.loadAll();
+    StorageService.saveOrders((cloud.orders || []) as Order[]); refreshData();
+    return true;
   };
 
-  const saveOrder = (order: Order) => {
-    const saved = StorageService.saveOrder(order);
+  const saveOrder = async (order: Order) => {
+    const saved = await CloudStoreService.order('save', order.id, order) as Order;
+    StorageService.saveOrder(saved);
     StorageService.logActivity('Pedido Salvo', `Pedido #${saved.orderNumber} salvo pelo painel administrativo.`);
-    orderSync.current = CloudStoreService.save('orders', StorageService.getOrders());
-    void orderSync.current.catch((error) => console.error('Falha ao sincronizar pedidos:', error));
     refreshData();
     return saved;
   };
 
   const deleteOrder = async (orderId: string) => {
-    await orderSync.current;
+    await CloudStoreService.order('delete', orderId);
     const cloud = await CloudStoreService.loadAll();
-    const current = Array.isArray(cloud.orders) ? cloud.orders as Order[] : StorageService.getOrders();
-    const next = current.filter(order => order.id !== orderId);
-    await CloudStoreService.save('orders', next);
+    const next = (cloud.orders || []) as Order[];
     StorageService.saveOrders(next);
     setOrders(next);
     let savedPayments: any[] = [];
@@ -250,16 +254,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return true;
   };
 
-  const createOrder = (orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'>) => {
-    const newOrd = StorageService.createOrder(orderData);
-    void CloudStoreService.save('products', StorageService.getProducts()).catch(error => console.error('Falha ao sincronizar estoque:', error));
-    StorageService.logActivity('Novo Pedido Recebido', `Pedido #${newOrd.orderNumber} - R$ ${newOrd.total.toFixed(2)}.`);
-    orderSync.current = CloudStoreService.save('orders', StorageService.getOrders());
-    void orderSync.current.catch((error) => console.error('Falha ao sincronizar pedidos:', error));
-    refreshData();
-    return newOrd;
-  };
-
   const logActivity = (action: string, detail: string) => {
     StorageService.logActivity(action, detail);
     void CloudStoreService.save('activities', StorageService.getActivities()).catch((error) => console.error('Falha ao sincronizar atividades:', error));
@@ -270,15 +264,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return StorageService.exportAllData();
   };
 
-  const importData = (jsonString: string) => {
-    const res = StorageService.importAllData(jsonString);
-    refreshData();
-    return res;
+  const importData = async (jsonString: string) => {
+    try {
+      const parsed = JSON.parse(jsonString);
+      const data: Record<string, unknown> = {};
+      for (const key of ['products','categories','services','gallery','content','settings']) if (parsed[key]) data[key] = parsed[key];
+      if (!Object.keys(data).length) throw new Error('O arquivo não contém um catálogo válido.');
+      await CloudStoreService.saveMany(data);
+      // Financial records are never replaced by a browser backup.
+      StorageService.importAllData(JSON.stringify(data)); refreshData();
+      return { success: true, message: 'Catálogo restaurado no servidor. Pedidos e agendamentos foram preservados.' };
+    } catch (error) { return { success: false, message: error instanceof Error ? error.message : 'Não foi possível restaurar.' }; }
   };
 
   const resetDefaults = () => {
-    StorageService.resetToDefaults();
-    refreshData();
+    // Clear this device's cache and immediately recover the actual server catalog.
+    window.location.reload();
   };
 
   return (
@@ -289,7 +290,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         services,
         gallery,
         content,
-        settings,
+        settings: agendaHours ? { ...settings, businessHoursWeekdays: [1,2,3,4,5].every(day => describeHours(agendaHours[String(day)]) === describeHours(agendaHours['1'])) ? describeHours(agendaHours['1']) : 'Horários por dia — consulte a agenda', businessHoursSaturday: describeHours(agendaHours['6']), businessHoursSunday: describeHours(agendaHours['0']) } : settings,
         orders,
         activities,
         refreshData,
@@ -303,7 +304,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateOrderStatus,
         saveOrder,
         deleteOrder,
-        createOrder,
         logActivity,
         exportData,
         importData,
