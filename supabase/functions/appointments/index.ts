@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
       return respond({ ok: true, checked: result.length, failed: result.filter(r => r.status === 'rejected').length });
     }
     if (action === 'track_access') {
-      if (req.headers.get('origin') !== 'https://daniel-soliz.github.io') return respond({ error: 'Origem inválida.' }, 403);
+      if (!['https://studioblack7.com.br', 'https://www.studioblack7.com.br', 'https://daniel-soliz.github.io'].includes(req.headers.get('origin') || '')) return respond({ error: 'Origem inválida.' }, 403);
       const sessionId = text(body.sessionId, 40), visitorId = text(body.visitorId, 40);
       const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
       if (!uuid.test(sessionId) || !uuid.test(visitorId)) return respond({ error: 'Acesso inválido.' }, 400);
