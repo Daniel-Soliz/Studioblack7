@@ -19,7 +19,7 @@ const dayOpen = (windows: Window[] = []) => windows.some(w => !w.closed);
 const api = 'https://oyghjlwujdmgfkopujip.supabase.co/functions/v1/appointments';
 export const AdminAppointmentsPage: React.FC = () => {
   const { session } = useAuth();
-  const [tab, setTab] = useState<'reservas' | 'horarios' | 'folgas'>('reservas');
+  const [tab, setTab] = useState<'reservas' | 'horarios' | 'folgas'>(() => new URLSearchParams(window.location.search).get('aba') === 'horarios' ? 'horarios' : 'reservas');
   const [agendaFilter, setAgendaFilter] = useState<'all' | 'confirmed' | 'pending_payment' | 'completed' | 'paid' | 'partial' | 'unpaid'>('all');
   const [agendaNow, setAgendaNow] = useState(Date.now());
   const [agendaDate, setAgendaDate] = useState('');
