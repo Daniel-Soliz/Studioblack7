@@ -1,6 +1,3 @@
--- Customer cancellation hides unpaid bookings from the operational admin agenda.
-alter table public.appointments add column if not exists cancelled_by_customer boolean not null default false;
-
 -- Half payments: keep charge separate from full service price.
 alter table public.appointments add column if not exists service_total_cents integer;
 
@@ -30,7 +27,7 @@ order_source as (select distinct on (o->>'id') o from public.site_data
  where key='orders' and o->>'id' is not null),
 ord as (select o,
  ((o->>'createdAt')::timestamptz at time zone 'America/Sao_Paulo')::date as day,
- o->>'paymentStatus'='paid' and coalesce(o->>'status','')<>'cancelled' sold,
+ o->>'paymentStatus'='paid' sold,
  greatest(0,coalesce((o->>'total')::numeric,0)) total
  from order_source where o->>'createdAt' ~ '^\d{4}-\d{2}-\d{2}T'),
 items as (select day,sold,
@@ -89,7 +86,7 @@ select jsonb_build_object(
  'scheduled',(select count(*) from a where day>=m.day and day<(m.day+interval '1 month') and active),
  'productUnits',(select coalesce(sum(quantity),0) from items where day>=m.day and day<(m.day+interval '1 month') and sold)) order by m.day) from monthly m)
 );
-$function$
+$function$;
 
 revoke all on function public.dashboard_report(date) from public,anon,authenticated;
 grant execute on function public.dashboard_report(date) to service_role;
