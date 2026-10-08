@@ -45,7 +45,7 @@ export const CheckoutPage: React.FC = () => {
     total, 
     clearCart 
   } = useCart();
-  const { createOrder, updateOrderStatus, deleteOrder } = useStore();
+  const { refreshData } = useStore();
   const navigate = useNavigate();
 
   const [restored] = useState(() => {
@@ -90,15 +90,16 @@ export const CheckoutPage: React.FC = () => {
       checking = true;
 
       try {
-        const result = await PaymentService.checkStorePayment(pixPayment.orderId);
+        const result = await PaymentService.checkStorePayment(pixPayment.orderId, pixPayment.clientToken);
         if (!active) return;
 
         if (result.paid) {
           setPaymentConfirmed(true);
           setPaymentChecking(false);
           setPaymentStatusMessage('Pagamento confirmado.');
-          rememberStorePayment({ order: { ...completedOrder, status: 'confirmed', paymentStatus: 'paid' }, pix: pixPayment, state: 'paid' });
-          updateOrderStatus(completedOrder.id, 'confirmed', 'paid');
+          const confirmed = result.order || { ...completedOrder, status: 'confirmed' as const, paymentStatus: 'paid' as const };
+          setCompletedOrder(confirmed);
+          rememberStorePayment({ order: confirmed, pix: pixPayment, state: 'paid' });
 
 
           return;
@@ -109,7 +110,6 @@ export const CheckoutPage: React.FC = () => {
           setPaymentClosed(true);
           setPaymentStatusMessage('Este Pix encerrou. Você pode voltar os produtos ao carrinho.');
           rememberStorePayment({ order: completedOrder, pix: pixPayment, state: 'expired' });
-          updateOrderStatus(completedOrder.id, 'cancelled', 'pending');
           return;
         }
         setPaymentStatusMessage('Aguardando confirmação do pagamento...');
@@ -121,7 +121,7 @@ export const CheckoutPage: React.FC = () => {
     };
 
     void verifyPayment();
-    const interval = window.setInterval(() => void verifyPayment(), 4000);
+    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void verifyPayment(); }, 2000);
 
     const onVisible = () => {
       if (document.visibilityState === 'visible') void verifyPayment();
@@ -200,15 +200,7 @@ export const CheckoutPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const checkoutReference = `sb7_checkout_${Date.now()}`;
       const pix = await PaymentService.createStorePix({
-        orderId: checkoutReference,
-        customerName: name,
-        customerEmail: email,
-        items: cart.map(i => ({ productId: i.product.id, quantity: i.quantity }))
-      });
-
-      const newOrder = createOrder({
         customer: {
           name,
           email,
@@ -223,27 +215,12 @@ export const CheckoutPage: React.FC = () => {
             postalCode
           }
         },
-        items: cart.map(i => ({
-          productId: i.product.id,
-          productName: i.product.name,
-          name: i.product.name,
-          quantity: i.quantity,
-          unitPrice: i.product.salePrice ?? i.product.price,
-          price: i.product.salePrice ?? i.product.price,
-          totalPrice: (i.product.salePrice ?? i.product.price) * i.quantity,
-          image: i.product.thumbnail || i.product.images?.[0] || '',
-          sku: i.product.sku || ''
-        })),
-        subtotal,
-        shipping,
+        items: cart.map(i => ({ productId: i.product.id, quantity: i.quantity })),
         shippingMethod,
-        total,
-        status: 'pending',
-        paymentStatus: 'pending',
-        paymentMethod: 'Pix Mercado Pago',
-        notes: [notes, `Mercado Pago Order: ${pix.orderId}`, `Payment: ${pix.paymentId}`].filter(Boolean).join(' | ')
+        notes
       });
-
+      if (!pix.order) throw new Error('Não foi possível recuperar os dados do pedido. Tente novamente.');
+      const newOrder = pix.order;
       rememberStorePayment({ order: newOrder, pix, state: 'pending' });
       setPixPayment(pix);
       setCompletedOrder(newOrder);
@@ -259,9 +236,7 @@ export const CheckoutPage: React.FC = () => {
     if (!completedOrder || !pixPayment || cancelling) return;
     setCancelling(true); setErrorMessage('');
     try {
-      await PaymentService.cancelStorePayment(pixPayment.orderId);
-      updateOrderStatus(completedOrder.id, 'cancelled', 'pending');
-      await deleteOrder(completedOrder.id);
+      await PaymentService.cancelStorePayment(pixPayment.orderId, pixPayment.clientToken);
       rememberStorePayment({ order: completedOrder, pix: pixPayment, state: 'cancelled' });
       navigate('/carrinho');
     } catch (error) { setErrorMessage(error instanceof Error ? error.message : 'Não foi possível cancelar.'); }
@@ -270,8 +245,8 @@ export const CheckoutPage: React.FC = () => {
 
   const copyPixCode = async () => {
     if (!pixPayment?.qrCode) return;
-    await navigator.clipboard.writeText(pixPayment.qrCode);
-    setPixCopied(true);
+    try { await navigator.clipboard.writeText(pixPayment.qrCode); setPixCopied(true); }
+    catch { setErrorMessage('Não foi possível copiar automaticamente. Selecione o código Pix abaixo e copie.'); }
     window.setTimeout(() => setPixCopied(false), 1800);
   };
 
