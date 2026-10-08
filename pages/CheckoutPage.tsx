@@ -174,7 +174,7 @@ export const CheckoutPage: React.FC = () => {
         : `${data.localidade || ''}/${data.uf || ''}`
       );
     } catch {
-      setCepMessage('Não foi possível consultar o CEP agora. Tente novamente.');
+      setCepMessage('Não foi possível consultar o CEP. Preencha o endereço abaixo para continuar.');
     } finally {
       setIsLookingUpCep(false);
     }
@@ -197,6 +197,10 @@ export const CheckoutPage: React.FC = () => {
       return;
     }
 
+    if (!shippingMethod.startsWith('Retirada') && (!address.trim() || !number.trim() || postalCode.replace(/\D/g, '').length !== 8 || !city.trim() || !state.trim())) {
+      setErrorMessage('Confira o CEP, a rua, o número, a cidade e o estado para a entrega.');
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -531,6 +535,17 @@ export const CheckoutPage: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                {!shippingMethod.startsWith('Retirada') && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { label: 'Rua / avenida', value: address, set: setAddress, autocomplete: 'address-line1' },
+                    { label: 'Bairro', value: neighborhood, set: setNeighborhood, autocomplete: 'address-level3' },
+                    { label: 'Cidade', value: city, set: setCity, autocomplete: 'address-level2' },
+                    { label: 'Estado (UF)', value: state, set: setState, autocomplete: 'address-level1' },
+                    { label: 'Complemento (opcional)', value: complement, set: setComplement, autocomplete: 'address-line2' },
+                  ].map(field => <label key={field.label} className="block text-xs font-bold text-zinc-300 uppercase">{field.label}<input type="text" value={field.value} onChange={e => field.set(e.target.value)} autoComplete={field.autocomplete} className="mt-1 w-full px-4 py-3 rounded-xl bg-black/60 border border-zinc-700 focus:border-amber-400 focus:outline-none text-white" /></label>)}
+                  <p className="sm:col-span-2 text-xs text-zinc-400">Confira o endereço completo antes de gerar o Pix.</p>
+                </div>}
 
                 {cepMessage && (
                   <div className={`p-3 rounded-xl border text-xs ${address
