@@ -115,8 +115,8 @@ export const Footer: React.FC = () => {
               <div className="flex items-start gap-2 text-zinc-300">
                 <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <div>
-                  <p>Seg–Sex: {settings.businessHoursWeekdays || '09h00–12h00 e 13h30–21h00'}</p>
-                  <p>Sáb: {settings.businessHoursSaturday || '09h00–12h00 e 13h30–21h00'}</p>
+                  <p>Seg–Sex: {settings.businessHoursWeekdays || '09h00–12h00 e 13h00–20h00'}</p>
+                  <p>Sáb: {settings.businessHoursSaturday || '09h00–12h00 e 13h00–20h00'}</p>
                   <p className="text-zinc-500">Dom: {settings.businessHoursSunday || 'Fechado'}</p>
                 </div>
               </div>
@@ -145,6 +145,7 @@ export const Footer: React.FC = () => {
           <p className="flex items-center justify-center gap-1">
             <span>Feito com elegância na Zona Norte de SP.</span>
           </p>
+          <Link to="/privacidade" className="text-amber-400 hover:text-amber-300">Privacidade e seus dados</Link>
         </div>
 
       </div>
