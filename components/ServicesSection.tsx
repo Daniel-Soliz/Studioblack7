@@ -126,7 +126,7 @@ export const ServicesSection: React.FC = () => {
                     {service.duration && (
                       <div className="inline-flex items-center gap-1.5 mt-3 text-[11px] text-zinc-400">
                         <Clock3 className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Duração estimada: {service.duration}</span>
+                        <span>Horário reservado: 1 hora por cliente</span>
                       </div>
                     )}
                   </div>
