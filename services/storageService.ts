@@ -443,8 +443,8 @@ export const INITIAL_SETTINGS: SiteSettings = {
   addressZipCode: '',
   referencePoint: '',
   mapsUrl: 'https://www.google.com/maps/search/?api=1&query=R.+Boa+Vista+-+Jardim+Paulistano,+S%C3%A3o+Paulo+-+SP',
-  businessHoursWeekdays: '09h00–12h00 e 13h30–21h00',
-  businessHoursSaturday: '09h00–12h00 e 13h30–21h00',
+  businessHoursWeekdays: '09h00–12h00 e 13h00–20h00',
+  businessHoursSaturday: '09h00–12h00 e 13h00–20h00',
   businessHoursSunday: 'Fechado',
   statusNote: 'Segunda a Sábado — consulte disponibilidade pelo WhatsApp',
   logoUrl: '/images/ray_logo.png',
@@ -454,7 +454,7 @@ export const INITIAL_SETTINGS: SiteSettings = {
   metaTitle: 'Studio Black7 | Barbearia Premium na Zona Norte de São Paulo',
   metaDescription: 'Studio Black7 — Barbearia premium na Zona Norte de São Paulo. Cortes, barba, penteados, química, coloração e produtos masculinos.',
   lowStockThreshold: 5,
-  adminPasswordHash: '067462d6fd87e8dcb22d7130736e6b2036021692166785531d2ca1f486aed709'
+  // Administrative credentials are held only by the private server.
 };
 
 // Known demonstration records must never appear in production.
@@ -753,11 +753,15 @@ export class StorageService {
   // SETTINGS
   static getSettings(): SiteSettings {
     const settings = this.getItem<SiteSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
-    return { ...INITIAL_SETTINGS, ...settings };
+    const clean = { ...settings };
+    delete clean.adminPasswordHash; delete clean.cloudSyncKey; delete clean.cloudSyncUrl; delete clean.adminEmail;
+    return { ...INITIAL_SETTINGS, ...clean };
   }
 
   static saveSettings(settings: SiteSettings): void {
-    this.setItem(STORAGE_KEYS.SETTINGS, settings);
+    const clean = { ...settings };
+    delete clean.adminPasswordHash; delete clean.cloudSyncKey; delete clean.cloudSyncUrl; delete clean.adminEmail;
+    this.setItem(STORAGE_KEYS.SETTINGS, clean);
   }
 
   // ACTIVITY LOGS
