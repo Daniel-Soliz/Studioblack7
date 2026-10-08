@@ -20,7 +20,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
-    private static final String HOME_URL = "https://daniel-soliz.github.io/Studioblack7/";
+    private static final String HOME_URL = "https://studioblack7.com.br/";
     private static final int FILE_CHOOSER_REQUEST = 1001;
 
     private WebView webView;
@@ -139,8 +139,7 @@ public class MainActivity extends Activity {
         String path = uri.getPath() == null ? "" : uri.getPath();
 
         if (scheme.equals("https")
-                && host.equals("daniel-soliz.github.io")
-                && path.startsWith("/Studioblack7")) {
+                && (host.equals("studioblack7.com.br") || host.equals("www.studioblack7.com.br"))) {
             return false;
         }
 
