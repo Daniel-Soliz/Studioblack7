@@ -43,11 +43,11 @@ r=await run({action:'check_status',kind:'store',orderId:'ORDFIXTURE',clientToken
 r=await run({action:'cancel_order',kind:'store',orderId:'ORDFIXTURE',clientToken:fixtures.clientToken});assert.equal(r.status,200);assert.equal(r.calls.filter(c=>c.body?.p_action==='close').length,1);
 
 const manifest=JSON.parse(fs.readFileSync('public/manifest.webmanifest','utf8'));
-assert.equal(manifest.start_url,'/Studioblack7/');assert.equal(manifest.scope,'/Studioblack7/');assert.equal(manifest.display,'standalone');
+assert.equal(manifest.start_url,'/');assert.equal(manifest.scope,'/');assert.equal(manifest.display,'standalone');
 for(const icon of manifest.icons){const bytes=fs.readFileSync('public/'+icon.src);assert.equal(bytes.readUInt32BE(16),Number(icon.sizes.split('x')[0]));assert.equal(bytes.readUInt32BE(20),Number(icon.sizes.split('x')[1]));}
 const swListeners={};vm.runInNewContext(fs.readFileSync('public/sw.js','utf8'),{URL,self:{location:{origin:'https://fixture.invalid'},addEventListener:(name,handler)=>{swListeners[name]=handler;}},caches:{},fetch:()=>{throw new Error('unexpected network');}});
 let intercepted=false;swListeners.fetch({request:new Request('https://database.invalid/rest/v1/site_data'),respondWith:()=>{intercepted=true;}});assert.equal(intercepted,false);
-swListeners.fetch({request:new Request('https://fixture.invalid/Studioblack7/agendar',{method:'POST'}),respondWith:()=>{intercepted=true;}});assert.equal(intercepted,false);
+swListeners.fetch({request:new Request('https://fixture.invalid/agendar',{method:'POST'}),respondWith:()=>{intercepted=true;}});assert.equal(intercepted,false);
 console.log('PASS: server totals, freight, idempotency, stock failure, private access, cancellation, forged notifications, amount mismatch, PWA icon dimensions/scope and API cache isolation. No real payment created.');
 
 const authCode = transformSync(fs.readFileSync('supabase/functions/admin-security/index.ts','utf8').replace(/^import .*edge-runtime.*;\n/,''),{loader:'ts',format:'iife',target:'es2022'}).code;
