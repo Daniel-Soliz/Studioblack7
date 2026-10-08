@@ -1,11 +1,11 @@
 {
-  "id": "/Studioblack7/",
+  "id": "/",
   "name": "Studio Black7",
   "short_name": "Black7",
   "description": "Agende seu corte e compre produtos do Studio Black7.",
   "lang": "pt-BR",
-  "start_url": "/Studioblack7/",
-  "scope": "/Studioblack7/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#08080a",
   "theme_color": "#08080a",
@@ -14,7 +14,7 @@
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
   ],
   "shortcuts": [
-    { "name": "Agendar meu corte", "url": "/Studioblack7/agendar" },
-    { "name": "Loja Black7", "url": "/Studioblack7/loja" }
+    { "name": "Agendar meu corte", "url": "/agendar" },
+    { "name": "Loja Black7", "url": "/loja" }
   ]
 }
