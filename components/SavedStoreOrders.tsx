@@ -9,7 +9,7 @@ export function SavedStoreOrders() {
   const [records, setRecords] = useState(readStorePayments);
   const [busy, setBusy] = useState('');
   const [notice, setNotice] = useState('');
-  const { products, updateOrderStatus, deleteOrder } = useStore();
+  const { products } = useStore();
   const { cart, addToCart } = useCart();
   useEffect(() => {
     let active = true;
@@ -19,27 +19,26 @@ export function SavedStoreOrders() {
       for (const record of readStorePayments()) {
         if (record.state !== 'pending') continue;
         try {
-          const result = await PaymentService.checkStorePayment(record.pix.orderId);
+          const result = await PaymentService.checkStorePayment(record.pix.orderId, record.pix.clientToken);
           if (!active) return;
           const current = readStorePayments().find(r => r.order.id === record.order.id);
           if (!current || current.state !== 'pending') continue;
           const state = result.paid ? 'paid' : result.closed ? 'expired' : 'pending';
           if (state !== 'pending') {
-            rememberStorePayment({ ...current, state });
-            updateOrderStatus(record.order.id, state === 'paid' ? 'confirmed' : 'cancelled', state === 'paid' ? 'paid' : 'pending');
+            rememberStorePayment({ ...current, order: result.order || current.order, state });
           }
         } catch { /* Keep the saved payment available while the provider is unavailable. */ }
       }
     };
     void verify();
-    return () => { active = false; window.removeEventListener(STORE_PAYMENTS_EVENT, reload); };
+    const resume = () => { if (document.visibilityState === 'visible') void verify(); };
+    document.addEventListener('visibilitychange', resume);
+    return () => { active = false; window.removeEventListener(STORE_PAYMENTS_EVENT, reload); document.removeEventListener('visibilitychange', resume); };
   }, []);
   const cancel = async (record: SavedStorePayment) => {
     setBusy(record.order.id); setNotice('');
     try {
-      await PaymentService.cancelStorePayment(record.pix.orderId);
-      updateOrderStatus(record.order.id, 'cancelled', 'pending');
-      await deleteOrder(record.order.id);
+      await PaymentService.cancelStorePayment(record.pix.orderId, record.pix.clientToken);
       rememberStorePayment({ ...record, state: 'cancelled' });
       setNotice('Pedido cancelado. Você pode devolver os produtos ao carrinho.');
     } catch (error) { setNotice(error instanceof Error ? error.message : 'Não foi possível cancelar. Tente novamente.'); }
