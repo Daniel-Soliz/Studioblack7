@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, Scissors, Sparkles, Clock3 } from 'lucide-react';
 import { ServicePhotoGallery } from './ServicePhotoGallery';
@@ -15,6 +15,45 @@ const realWorkImages = [
 export const ServicesSection: React.FC = () => {
   const { services, settings } = useStore();
   const [carouselPaused, setCarouselPaused] = useState(false);
+  const workTrack = useRef<HTMLDivElement>(null);
+  const workOffset = useRef(0);
+  const workWidth = useRef(0);
+  const workDrag = useRef<{ pointerId: number; x: number } | null>(null);
+
+  const moveWorkPhotos = (distance: number) => {
+    const width = workWidth.current;
+    if (!width || !workTrack.current) return;
+    workOffset.current = ((workOffset.current + distance) % width + width) % width;
+    workTrack.current.style.transform = `translateX(-${workOffset.current}px)`;
+  };
+
+  useEffect(() => {
+    const track = workTrack.current;
+    if (!track) return;
+    const measure = () => { workWidth.current = track.scrollWidth / 2; moveWorkPhotos(0); };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(track);
+    let frame = 0;
+    let previous = 0;
+    const animate = (time: number) => {
+      if (previous && !carouselPaused && !workDrag.current) {
+        moveWorkPhotos(workWidth.current * Math.min(time - previous, 50) / 60000);
+      }
+      previous = time;
+      frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => { cancelAnimationFrame(frame); observer.disconnect(); };
+  }, [carouselPaused]);
+
+  const finishWorkDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (workDrag.current?.pointerId !== event.pointerId) return;
+    workDrag.current = null;
+    event.currentTarget.style.cursor = 'grab';
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  };
+
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
 
   const categories = ['Todos', 'Cortes', 'Barba', 'Penteado / Acabamento', 'Química / Alisamento', 'Coloração'];
@@ -173,19 +212,34 @@ export const ServicesSection: React.FC = () => {
           </div>
 
           <style>{`
-            @keyframes black7-work-loop { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-            .black7-work-viewport { overflow: hidden; width: 100%; }
-            .black7-work-track { display: flex; width: max-content; animation: black7-work-loop 60s linear infinite; }
+            .black7-work-viewport { overflow: hidden; width: 100%; touch-action: pan-y; user-select: none; cursor: grab; }
+            .black7-work-track { display: flex; width: max-content; will-change: transform; }
             .black7-work-group { display: flex; flex-shrink: 0; gap: 16px; padding-right: 16px; }
             .black7-work-card { width: clamp(180px, 24vw, 280px); flex-shrink: 0; }
           `}</style>
-          <div className="black7-work-viewport rounded-2xl" role="region" aria-label="Fotos dos resultados Studio Black7">
-            <div className="black7-work-track" style={{ animationPlayState: carouselPaused ? 'paused' : 'running' }}>
+          <div className="black7-work-viewport rounded-2xl" role="region" aria-label="Fotos dos resultados Studio Black7"
+            onPointerDown={event => {
+              if (event.button !== 0 || workDrag.current) return;
+              workDrag.current = { pointerId: event.pointerId, x: event.clientX };
+              event.currentTarget.setPointerCapture(event.pointerId);
+              event.currentTarget.style.cursor = 'grabbing';
+            }}
+            onPointerMove={event => {
+              const drag = workDrag.current;
+              if (!drag || drag.pointerId !== event.pointerId) return;
+              moveWorkPhotos(drag.x - event.clientX);
+              drag.x = event.clientX;
+            }}
+            onPointerUp={finishWorkDrag}
+            onPointerCancel={finishWorkDrag}
+            onLostPointerCapture={finishWorkDrag}
+          >
+            <div ref={workTrack} className="black7-work-track">
               {[false, true].map(copy => (
                 <div key={String(copy)} className="black7-work-group" data-copy={String(copy)} aria-hidden={copy || undefined}>
                   {realWorkImages.map((image, index) => (
                     <div key={image.src} className="black7-work-card relative aspect-[4/5] overflow-hidden rounded-xl sm:rounded-2xl">
-                      <img src={image.src} alt={copy ? '' : image.alt} className="absolute inset-0 w-full h-full object-cover object-center" loading="eager" decoding="async" />
+                      <img draggable={false} src={image.src} alt={copy ? '' : image.alt} className="absolute inset-0 w-full h-full object-cover object-center" loading="eager" decoding="async" />
                       <div className="absolute left-2 bottom-2 rounded-md bg-black/60 px-2 py-1">
                         <span className="text-[10px] uppercase tracking-wider font-bold text-white/90">Trabalho #{index + 1}</span>
                       </div>
