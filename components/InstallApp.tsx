@@ -59,13 +59,13 @@ export function InstallApp() {
         }
       }}>
         <button autoFocus onClick={() => setOpen(false)} className="absolute right-3 top-3 rounded-full p-2 text-zinc-400" aria-label="Fechar instalação"><X className="h-5 w-5" /></button>
-        <img src={import.meta.env.BASE_URL + 'icon-192.png'} alt="Studio Black7" className="mb-4 h-16 w-16 rounded-2xl" />
+        <img src={import.meta.env.BASE_URL + 'icon-192.png?v=20261009'} alt="Studio Black7" className="mb-4 h-16 w-16 rounded-2xl" />
         <h2 id="install-title" className="text-2xl font-bold">Black7 no seu celular</h2>
         <p className="mt-2 text-sm text-zinc-300">Agende seu corte, acompanhe seu Pix e compre produtos com um toque na tela inicial.</p>
         {ios ? <ol className="my-5 space-y-4 text-sm">
           <li className="flex gap-3"><Share className="h-5 w-5 shrink-0 text-amber-400" /><span>1. Abra este site no <strong>Safari</strong> e toque em <strong>Compartilhar</strong> (ou no menu e depois Compartilhar).</span></li>
           <li className="flex gap-3"><PlusSquare className="h-5 w-5 shrink-0 text-amber-400" /><span>2. Escolha <strong>Adicionar à Tela de Início</strong>.</span></li>
-          <li className="flex gap-3"><Smartphone className="h-5 w-5 shrink-0 text-amber-400" /><span>3. Se aparecer, ative <strong>Abrir como App da Web</strong> e toque em <strong>Adicionar</strong>.</span></li>
+          <li className="flex gap-3"><Smartphone className="h-5 w-5 shrink-0 text-amber-400" /><span>3. Aguarde o nome e o ícone carregarem. Se aparecer, ative <strong>Abrir como App da Web</strong> e toque em <strong>Adicionar</strong>.</span></li>
         </ol> : ready ? <button disabled={busy} onClick={() => void install()} className="mt-5 w-full rounded-xl bg-amber-400 p-3 font-bold text-black disabled:opacity-60">{busy ? 'Abrindo instalação…' : 'Instalar Studio Black7'}</button> : <p className="my-5 rounded-xl bg-zinc-900 p-4 text-sm text-zinc-200">Abra o menu <strong>⋮</strong> do Chrome e toque em <strong>Instalar aplicativo</strong> ou <strong>Adicionar à tela inicial</strong>. Se estiver no Instagram ou WhatsApp, escolha primeiro <strong>Abrir no navegador</strong>.</p>}
         {notice && <p role="status" className="mt-3 text-sm text-amber-300">{notice}</p>}
         <p className="mt-4 text-xs text-zinc-400">Grátis. Sem cadastro para instalar. Agendamentos e pagamentos precisam de internet.</p>

@@ -1,8 +1,8 @@
 /* Cache only static assets. Payments, customer/admin data and APIs always use the network. */
-const CACHE = 'sb7-static-v2';
+const CACHE = 'sb7-static-v3';
 const ROOT = '/';
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll([ROOT + 'offline.html', ROOT + 'icon-192.png', ROOT + 'icon-512.png'])));
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll([ROOT + 'offline.html', ROOT + 'icon-192.png?v=20261009', ROOT + 'icon-512.png?v=20261009'])));
   self.skipWaiting();
 });
 self.addEventListener('activate', event => {
