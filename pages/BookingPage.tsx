@@ -50,10 +50,15 @@ export const BookingPage: React.FC = () => {
   const [status, setStatus] = useState('');
   useEffect(() => {
     if (!payment || ['checking', 'confirmed', 'completed', 'expired', 'cancelled'].includes(status)) return;
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    let secondFrame = 0;
     const frame = requestAnimationFrame(() => {
-      document.getElementById('booking-pix-code')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('booking-payment-panel')?.scrollIntoView({ behavior: 'instant', block: 'start' });
+      secondFrame = requestAnimationFrame(() => {
+        document.getElementById('booking-payment-panel')?.scrollIntoView({ behavior: 'instant', block: 'start' });
+      });
     });
-    return () => cancelAnimationFrame(frame);
+    return () => { cancelAnimationFrame(frame); cancelAnimationFrame(secondFrame); };
   }, [payment?.reference, status === 'checking']);
 
   const [name, setName] = useState(''), [email, setEmail] = useState(''), [phone, setPhone] = useState('');
@@ -229,7 +234,7 @@ export const BookingPage: React.FC = () => {
         })}</div>
         <p className="text-xs text-zinc-400">A lista fica salva neste navegador. A confirmação e a validade do Pix são consultadas no sistema.</p>
       </section>}
-      {payment ? <section className="mt-8 w-full min-w-0 rounded-2xl border border-amber-400/40 bg-zinc-900 p-5 sm:p-8 text-center space-y-5">
+      {payment ? <section id="booking-payment-panel" className="scroll-mt-24 mt-8 w-full min-w-0 rounded-2xl border border-amber-400/40 bg-zinc-900 p-5 sm:p-8 text-center space-y-5">
         {!['confirmed', 'completed'].includes(status) && <div className="text-left"><button type="button" onClick={returnToServices} className="inline-flex items-center gap-2 rounded-xl border border-zinc-600 px-4 py-3 font-bold"><span aria-hidden="true">←</span> Voltar e escolher outro serviço</button><p className="mt-2 text-xs text-zinc-400">Se não quiser continuar, não pague este Pix. Voltar não cancela o código já gerado; ele vence em 30 minutos.</p></div>}
         {['confirmed', 'completed'].includes(status) ? payment.booking ? <BookingConfirmed booking={payment.booking} reference={payment.reference} amount={payment.amount} remainingAmount={payment.remainingAmount} onNewBooking={returnToServices} /> : <p role="status">Pagamento aprovado. Carregando os detalhes do agendamento...</p> : status === 'checking' ? <p role="status">Consultando sua reserva e a validade do Pix...</p> : ['expired', 'cancelled'].includes(status) ? <><h2 className="text-xl font-bold">Reserva expirada</h2><p>O horário foi liberado. Se você pagou, entre em contato com a equipe e informe o código {payment.reference}.</p><button type="button" onClick={() => setPayment(null)} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Escolher outro horário</button></> : <>
           <h2 className="text-2xl font-bold text-amber-400">Pague R$ {payment.amount.toFixed(2).replace('.', ',')} por Pix</h2>

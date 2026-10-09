@@ -81,10 +81,15 @@ export const CheckoutPage: React.FC = () => {
 
   useEffect(() => {
     if (!pixPayment || paymentChecking || paymentConfirmed || paymentClosed) return;
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    let secondFrame = 0;
     const frame = requestAnimationFrame(() => {
-      document.getElementById('store-pix-code')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      secondFrame = requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      });
     });
-    return () => cancelAnimationFrame(frame);
+    return () => { cancelAnimationFrame(frame); cancelAnimationFrame(secondFrame); };
   }, [pixPayment?.orderId, paymentChecking]);
 
 
