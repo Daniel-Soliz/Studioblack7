@@ -489,7 +489,7 @@ export const CheckoutPage: React.FC = () => {
             </div>
 
             {/* Address / Delivery Details */}
-            <div className="p-6 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-4 shadow-xl">
+            {!shippingMethod.startsWith('Retirada') && <div className="p-6 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-4 shadow-xl">
               <h2 className="font-['Cinzel'] text-lg font-bold text-white border-b border-zinc-800 pb-3">
                 {shippingMethod.startsWith('Retirada') ? '2. Local de Retirada' : '2. Endereço de Entrega'}
               </h2>
@@ -572,13 +572,13 @@ export const CheckoutPage: React.FC = () => {
                   />
                 </div>
               </div>
-            </div>
+            </div>}
 
             {/* Payment Section Contract */}
             <div className="p-6 rounded-2xl bg-zinc-900/80 border border-amber-400/30 space-y-4 shadow-xl">
               <h2 className="font-['Cinzel'] text-lg font-bold text-white border-b border-zinc-800 pb-3 flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-amber-400" />
-                <span>3. Forma de Pagamento</span>
+                <span>{shippingMethod.startsWith('Retirada') ? '2. Forma de Pagamento' : '3. Forma de Pagamento'}</span>
               </h2>
 
               <div className="p-4 rounded-xl bg-black/60 border border-amber-400/30 space-y-2">
