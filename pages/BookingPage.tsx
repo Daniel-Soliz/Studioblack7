@@ -48,6 +48,14 @@ export const BookingPage: React.FC = () => {
   const [cancellingReference, setCancellingReference] = useState('');
   const [notice, setNotice] = useState('');
   const [status, setStatus] = useState('');
+  useEffect(() => {
+    if (!payment || ['checking', 'confirmed', 'completed', 'expired', 'cancelled'].includes(status)) return;
+    const frame = requestAnimationFrame(() => {
+      document.getElementById('booking-pix-code')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [payment?.reference, status === 'checking']);
+
   const [name, setName] = useState(''), [email, setEmail] = useState(''), [phone, setPhone] = useState('');
   const rememberPayment = (record: SavedPayment) => {
     setSavedPayments(previous => {
@@ -227,7 +235,7 @@ export const BookingPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-amber-400">Pague R$ {payment.amount.toFixed(2).replace('.', ',')} por Pix</h2>
           {Boolean(payment.remainingAmount) && <p className="rounded-xl bg-amber-400/10 p-3 text-amber-200">Entrada de 50%. Restante de R$ {payment.remainingAmount!.toFixed(2).replace('.', ',')} para pagar no atendimento.</p>}
           <p className="text-sm text-zinc-300">Aguardando confirmação do Mercado Pago. Já pagou? Não pague novamente: estamos verificando automaticamente. O Pix vence em 30 minutos.</p>
-          {payment.qrCodeBase64 && <img className="mx-auto w-60 h-60 rounded-lg bg-white p-2" alt="QR Code Pix" src={`data:image/png;base64,${payment.qrCodeBase64}`} />}
+          {payment.qrCodeBase64 && <img id="booking-pix-code" className="scroll-mt-32 mx-auto w-60 h-60 rounded-lg bg-white p-2" alt="QR Code Pix" src={`data:image/png;base64,${payment.qrCodeBase64}`} />}
           {payment.qrCode && <><textarea readOnly value={payment.qrCode} className="block w-full min-w-0 max-w-full h-24 rounded-xl bg-black p-3 text-xs text-zinc-200" aria-label="Código Pix copia e cola" /><button type="button" onClick={() => navigator.clipboard.writeText(payment.qrCode || '')} className="rounded-xl bg-amber-400 px-5 py-3 text-black font-bold">Copiar código Pix</button></>}
           {payment.ticketUrl && <p><a href={payment.ticketUrl} target="_blank" rel="noopener noreferrer" className="underline text-amber-300">Abrir pagamento no Mercado Pago</a></p>}
           <p className="break-all text-xs text-zinc-500">Código da reserva: {payment.reference}</p>

@@ -80,6 +80,15 @@ export const CheckoutPage: React.FC = () => {
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
+    if (!pixPayment || paymentChecking || paymentConfirmed || paymentClosed) return;
+    const frame = requestAnimationFrame(() => {
+      document.getElementById('store-pix-code')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pixPayment?.orderId, paymentChecking]);
+
+
+  useEffect(() => {
     if (!completedOrder || !pixPayment?.orderId || paymentConfirmed || paymentClosed) { setPaymentChecking(false); return; }
 
     let active = true;
@@ -285,7 +294,7 @@ export const CheckoutPage: React.FC = () => {
               <p className="text-xs text-zinc-300">Escaneie o QR Code ou use o Pix Copia e Cola.</p>
 
               {pixPayment.qrCodeBase64 && (
-                <div className="w-56 h-56 mx-auto p-3 rounded-2xl bg-white">
+                <div id="store-pix-code" className="scroll-mt-32 w-56 h-56 mx-auto p-3 rounded-2xl bg-white">
                   <img
                     src={`data:image/png;base64,${pixPayment.qrCodeBase64}`}
                     alt="QR Code Pix"
