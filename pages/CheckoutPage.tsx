@@ -491,7 +491,7 @@ export const CheckoutPage: React.FC = () => {
             {/* Address / Delivery Details */}
             <div className="p-6 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-4 shadow-xl">
               <h2 className="font-['Cinzel'] text-lg font-bold text-white border-b border-zinc-800 pb-3">
-                2. Endereço de Entrega / Local de Retirada
+                {shippingMethod.startsWith('Retirada') ? '2. Local de Retirada' : '2. Endereço de Entrega'}
               </h2>
 
               <div className="space-y-4">
@@ -500,6 +500,7 @@ export const CheckoutPage: React.FC = () => {
                   <span>{shippingMethod}</span>
                 </div>
 
+                {!shippingMethod.startsWith('Retirada') && <>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-zinc-300 uppercase mb-1">
@@ -555,6 +556,8 @@ export const CheckoutPage: React.FC = () => {
                     {cepMessage}
                   </div>
                 )}
+
+                </>}
 
                 <div>
                   <label className="block text-xs font-bold text-zinc-300 uppercase mb-1">
